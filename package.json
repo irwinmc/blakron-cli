@@ -1,0 +1,33 @@
+{
+    "name": "@heron/cli",
+    "version": "0.1.0",
+    "description": "Heron CLI - build tool for Heron game engine",
+    "type": "module",
+    "bin": {
+        "heron": "./dist/index.js"
+    },
+    "main": "./dist/define.js",
+    "types": "./dist/define.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/define.d.ts",
+            "import": "./dist/define.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc --build",
+        "dev": "tsc --watch",
+        "clean": "rm -rf dist",
+        "heron": "node --import tsx/esm src/index.ts"
+    },
+    "dependencies": {
+        "commander": "^13.0.0",
+        "esbuild": "^0.25.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "tsx": "^4.21.0",
+        "typescript": "^5.6.0"
+    },
+    "packageManager": "pnpm@10.33.0"
+}
