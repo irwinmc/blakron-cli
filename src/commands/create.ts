@@ -10,5 +10,5 @@ export const createCommand = new Command('create')
 		logger.info(`Creating project "${name}" from template "${options.template}"...`);
 		await scaffoldProject(name, options.template);
 		logger.success(`Project created at ./${name}`);
-		logger.info(`Next steps:\n  cd ${name}\n  pnpm install\n  heron build`);
+		logger.info(`Next steps:\n  cd ${name}\n  pnpm install\n  blakron build`);
 	});

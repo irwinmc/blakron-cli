@@ -1,6 +1,6 @@
 class Main {
     constructor() {
-        console.log('Heron game started');
+        console.log('Blakron game started');
     }
 }
 

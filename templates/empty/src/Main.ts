@@ -1,4 +1,4 @@
-import { createPlayer, Sprite } from '@heron/core';
+import { createPlayer, Sprite } from '@blakron/core';
 
 const app = createPlayer({
 	canvas: document.getElementById('gameCanvas') as HTMLCanvasElement,

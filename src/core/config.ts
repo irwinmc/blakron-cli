@@ -30,7 +30,7 @@ export interface ProjectConfig {
     exml?: ExmlConfig;
 }
 
-/** Defines a typed project config — used in heron.config.ts */
+/** Defines a typed project config — used in blakron.config.ts */
 export function defineConfig(config: ProjectConfig): ProjectConfig {
     return config;
 }
@@ -50,8 +50,8 @@ const DEFAULTS: ProjectConfig = {
 };
 
 export async function loadConfig(): Promise<ProjectConfig> {
-    const configPath = path.resolve('heron.config.ts');
-    const jsConfigPath = path.resolve('heron.config.js');
+    const configPath = path.resolve('blakron.config.ts');
+    const jsConfigPath = path.resolve('blakron.config.js');
 
     if (await exists(configPath) || await exists(jsConfigPath)) {
         // Dynamic import works for both .js and pre-compiled .ts (via tsx/ts-node)

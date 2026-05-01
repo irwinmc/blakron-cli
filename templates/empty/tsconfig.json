@@ -5,8 +5,8 @@
 		"moduleResolution": "bundler",
 		"strict": true,
 		"paths": {
-			"@heron/cli": ["../../src/define.ts"],
-			"@heron/core": ["../../../core/src/index.ts"]
+			"@blakron/cli": ["../../src/define.ts"],
+			"@blakron/core": ["../../../core/src/index.ts"]
 		}
 	}
 }

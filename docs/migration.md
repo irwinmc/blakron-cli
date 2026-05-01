@@ -1,4 +1,4 @@
-# @heron/cli 迁移状态
+# @blakron/cli 迁移状态
 
 > 更新日期：2026-05-01
 
@@ -6,16 +6,16 @@
 
 ## 一、与旧 Egret CLI 的对比
 
-| 维度       | 旧 Egret CLI                              | Heron CLI                      | 状态                           |
+| 维度       | 旧 Egret CLI                              | Blakron CLI                      | 状态                           |
 | ---------- | ----------------------------------------- | ------------------------------ | ------------------------------ |
 | CLI 框架   | 手写参数解析                              | commander.js                   | ✅                             |
 | TS 编译器  | typescript-plus（魔改 tsc）               | esbuild                        | ✅                             |
-| 配置文件   | egretProperties.json + index.html data-\* | heron.config.ts                | ✅                             |
-| 构建命令   | `egret build`                             | `heron build`                  | ✅                             |
-| 创建项目   | `egret create`                            | `heron create`                 | ✅ game / empty 模板可用       |
-| 清理命令   | `egret clean`                             | `heron clean`                  | ✅                             |
-| 开发服务器 | `egret startserver`                       | `heron dev`                    | ✅ esbuild watch + live reload |
-| EXML 编译  | 内嵌在 tools/lib/eui/                     | `@heron/exml-parser`（独立包） | ⚠️ stub                        |
+| 配置文件   | egretProperties.json + index.html data-\* | blakron.config.ts                | ✅                             |
+| 构建命令   | `egret build`                             | `blakron build`                  | ✅                             |
+| 创建项目   | `egret create`                            | `blakron create`                 | ✅ game / empty 模板可用       |
+| 清理命令   | `egret clean`                             | `blakron clean`                  | ✅                             |
+| 开发服务器 | `egret startserver`                       | `blakron dev`                    | ✅ esbuild watch + live reload |
+| EXML 编译  | 内嵌在 tools/lib/eui/                     | `@blakron/exml-parser`（独立包） | ⚠️ stub                        |
 | 模块系统   | CommonJS                                  | ESM                            | ✅                             |
 
 ---
@@ -24,13 +24,13 @@
 
 ### 命令
 
-- `heron build`：html5 / wxgame 双目标，开发/生产模式，sourcemap 支持
-- `heron create <name>`：从 `game` 模板脚手架新项目
-- `heron clean`：清理输出目录
+- `blakron build`：html5 / wxgame 双目标，开发/生产模式，sourcemap 支持
+- `blakron create <name>`：从 `game` 模板脚手架新项目
+- `blakron clean`：清理输出目录
 
 ### 配置
 
-- `heron.config.ts` 替代 `egretProperties.json` + `index.html data-*`
+- `blakron.config.ts` 替代 `egretProperties.json` + `index.html data-*`
 - `defineConfig()` 提供类型安全的配置定义
 - 完整默认值，所有字段可选
 
@@ -65,7 +65,7 @@ function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
 
 **影响**：使用 `publishPolicy: 'gjs'` 的项目无法正确编译 EXML 皮肤。`path` / `content` / `json` 策略不受影响（只做文件收集，不解析内容）。
 
-**解决方案**：等待 `@heron/exml-parser` 包实现后替换此函数。
+**解决方案**：等待 `@blakron/exml-parser` 包实现后替换此函数。
 
 ---
 
@@ -74,14 +74,14 @@ function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
 | 模板    | 状态          | 说明                              |
 | ------- | ------------- | --------------------------------- |
 | `game`  | ✅ 可用       | 标准游戏项目                      |
-| `empty` | ✅ 可用       | 最小化项目，直接使用 @heron/core  |
-| `eui`   | ⬜ 目录不存在 | 含 EUI 的项目，等 @heron/eui 就绪 |
+| `empty` | ✅ 可用       | 最小化项目，直接使用 @blakron/core  |
+| `eui`   | ⬜ 目录不存在 | 含 EUI 的项目，等 @blakron/eui 就绪 |
 
 ---
 
 ### ~~⬜ 开发服务器~~ ✅ 已完成
 
-`heron dev` 命令已实现，基于 esbuild watch + SSE live reload。
+`blakron dev` 命令已实现，基于 esbuild watch + SSE live reload。
 
 ---
 
@@ -89,8 +89,8 @@ function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
 
 | 旧功能                  | 原因                          |
 | ----------------------- | ----------------------------- |
-| `egret publish`         | 合并到 `heron build --minify` |
-| `egret run`             | 由 `heron dev`（待实现）替代  |
+| `egret publish`         | 合并到 `blakron build --minify` |
+| `egret run`             | 由 `blakron dev`（待实现）替代  |
 | `egret upgrade`         | 不需要，用 pnpm 管理版本      |
 | native 平台编译         | 不支持 native，Web only       |
 | TypeScript 魔改编译器   | 用标准 esbuild 替代           |

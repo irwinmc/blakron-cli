@@ -5,8 +5,8 @@ const red = '\x1b[31m';
 const cyan = '\x1b[36m';
 
 export const logger = {
-    info: (msg: string): void => console.log(`${cyan}[heron]${reset} ${msg}`),
-    success: (msg: string): void => console.log(`${green}[heron]${reset} ${msg}`),
-    warn: (msg: string): void => console.warn(`${yellow}[heron]${reset} ${msg}`),
-    error: (msg: string): void => console.error(`${red}[heron]${reset} ${msg}`),
+    info: (msg: string): void => console.log(`${cyan}[blakron]${reset} ${msg}`),
+    success: (msg: string): void => console.log(`${green}[blakron]${reset} ${msg}`),
+    warn: (msg: string): void => console.warn(`${yellow}[blakron]${reset} ${msg}`),
+    error: (msg: string): void => console.error(`${red}[blakron]${reset} ${msg}`),
 };

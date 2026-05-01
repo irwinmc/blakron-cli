@@ -8,7 +8,7 @@ import { devCommand } from './commands/dev.js';
 
 const program = new Command();
 
-program.name('heron').description('Heron - Egret Next CLI').version('0.1.0');
+program.name('blakron').description('Blakron - Egret Next CLI').version('0.1.0');
 
 program.addCommand(buildCommand);
 program.addCommand(devCommand);

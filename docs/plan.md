@@ -1,4 +1,4 @@
-# @heron/cli 开发计划
+# @blakron/cli 开发计划
 
 > 更新日期：2026-05-01
 
@@ -9,14 +9,14 @@
 | 模块               | 状态    | 说明                                            |
 | ------------------ | ------- | ----------------------------------------------- |
 | `build` 命令       | ✅ 完成 | html5 / wxgame 双目标，开发/生产模式            |
-| `create` 命令      | ✅ 完成 | game / empty 模板可用，eui 模板等 @heron/eui    |
+| `create` 命令      | ✅ 完成 | game / empty 模板可用，eui 模板等 @blakron/eui    |
 | `clean` 命令       | ✅ 完成 |                                                 |
 | `dev` 命令         | ✅ 完成 | esbuild watch + SSE live reload，默认端口 3000  |
 | `config.ts`        | ✅ 完成 | defineConfig + loadConfig，完整类型             |
 | `compiler.ts`      | ✅ 完成 | esbuild 封装，双模式                            |
 | `dev-server.ts`    | ✅ 完成 | esbuild context + Node.js HTTP 代理             |
 | `template.ts`      | ✅ 完成 | index.html / game.js 生成，资源复制             |
-| `exml-compiler.ts` | ⚠️ stub | `exmlToGjs()` 是占位符，等待 @heron/exml-parser |
+| `exml-compiler.ts` | ⚠️ stub | `exmlToGjs()` 是占位符，等待 @blakron/exml-parser |
 | 错误处理           | ✅ 完成 | BuildError / ConfigError                        |
 | 日志               | ✅ 完成 | 彩色输出                                        |
 
@@ -24,7 +24,7 @@
 
 ## P1：高优先级 ✅ 全部完成
 
-### ~~`heron dev` 命令（开发服务器）~~ ✅
+### ~~`blakron dev` 命令（开发服务器）~~ ✅
 
 新增 `src/commands/dev.ts` + `src/core/dev-server.ts`：
 
@@ -36,9 +36,9 @@
 
 ### ~~`empty` 项目模板~~ ✅
 
-新增 `templates/empty/`：最小化项目，直接使用 `@heron/core` 的 `createPlayer`，无 EUI 依赖。`game` 模板的 `package.json` 同步补充了 `dev` 脚本。
+新增 `templates/empty/`：最小化项目，直接使用 `@blakron/core` 的 `createPlayer`，无 EUI 依赖。`game` 模板的 `package.json` 同步补充了 `dev` 脚本。
 
-`templates/eui/` 等 @heron/eui 就绪后补充。
+`templates/eui/` 等 @blakron/eui 就绪后补充。
 
 ---
 
@@ -46,11 +46,11 @@
 
 ### EXML 编译器（`exmlToGjs` 完整实现）
 
-**现状**：`exmlToGjs()` 是最小化 stub，只提取类名，不解析 EXML 节点结构。注释写明 "replace with @heron/exml-parser when available"。
+**现状**：`exmlToGjs()` 是最小化 stub，只提取类名，不解析 EXML 节点结构。注释写明 "replace with @blakron/exml-parser when available"。
 
-**依赖**：`@heron/exml-parser` 包（尚未实现）。
+**依赖**：`@blakron/exml-parser` 包（尚未实现）。
 
-**方案**：`@heron/exml-parser` 实现后，替换 `exmlToGjs()` 的实现，调用 parser 将 EXML XML 节点树转换为 EUI 皮肤 JS 代码。
+**方案**：`@blakron/exml-parser` 实现后，替换 `exmlToGjs()` 的实现，调用 parser 将 EXML XML 节点树转换为 EUI 皮肤 JS 代码。
 
 **改动范围**：`src/core/exml-compiler.ts` 的 `exmlToGjs()` 函数。
 
@@ -69,7 +69,7 @@
 
 ---
 
-### `heron build --watch` 模式
+### `blakron build --watch` 模式
 
 **现状**：`build` 命令是一次性构建，没有 watch 模式。
 
@@ -81,9 +81,9 @@
 
 ### 增量构建缓存
 
-esbuild 本身有缓存机制，但当前每次 `heron build` 都是全量构建。可以利用 esbuild 的 `incremental` 模式或文件 hash 缓存跳过未变更文件。
+esbuild 本身有缓存机制，但当前每次 `blakron build` 都是全量构建。可以利用 esbuild 的 `incremental` 模式或文件 hash 缓存跳过未变更文件。
 
-### `heron build --analyze`
+### `blakron build --analyze`
 
 输出 bundle 体积分析报告（esbuild metafile），帮助排查包体积问题。
 
@@ -97,6 +97,6 @@ esbuild 本身有缓存机制，但当前每次 `heron build` 都是全量构建
 
 | 项目                                       | 原因                        |
 | ------------------------------------------ | --------------------------- |
-| `templates/eui/`                           | 等待 @heron/eui 实现        |
+| `templates/eui/`                           | 等待 @blakron/eui 实现        |
 | EXML `path` / `content` 策略的运行时加载器 | 需要配合 assetsmanager 实现 |
 | wxgame 平台完整适配                        | 需要真实微信小游戏环境验证  |

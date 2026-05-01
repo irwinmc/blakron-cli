@@ -1,10 +1,10 @@
 {
-	"name": "@heron/cli",
+	"name": "@blakron/cli",
 	"version": "0.1.0",
-	"description": "Heron CLI - build tool for Heron game engine",
+	"description": "Blakron CLI - build tool for Blakron game engine",
 	"type": "module",
 	"bin": {
-		"heron": "./dist/index.js"
+		"blakron": "./dist/index.js"
 	},
 	"main": "./dist/define.js",
 	"types": "./dist/define.d.ts",
@@ -12,7 +12,7 @@
 		"build": "tsc --build",
 		"dev": "tsc --watch",
 		"clean": "rm -rf dist",
-		"heron": "tsx src/index.ts"
+		"blakron": "tsx src/index.ts"
 	},
 	"dependencies": {
 		"commander": "^13.0.0",

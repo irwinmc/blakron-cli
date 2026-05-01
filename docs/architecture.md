@@ -1,4 +1,4 @@
-# @heron/cli 架构文档
+# @blakron/cli 架构文档
 
 > 版本：0.1.0 | 更新日期：2026-05-01
 
@@ -6,14 +6,14 @@
 
 ## 一、概述
 
-`@heron/cli` 是 Heron 游戏引擎的命令行工具，替代旧 Egret 的 `egret` CLI。
+`@blakron/cli` 是 Heron 游戏引擎的命令行工具，替代旧 Egret 的 `egret` CLI。
 
-| 维度      | 旧 Egret CLI                              | Heron CLI                           |
+| 维度      | 旧 Egret CLI                              | Blakron CLI                           |
 | --------- | ----------------------------------------- | ----------------------------------- |
 | CLI 框架  | 手写参数解析                              | commander.js                        |
 | TS 编译器 | typescript-plus（魔改 tsc）               | esbuild                             |
-| 配置文件  | egretProperties.json + index.html data-\* | heron.config.ts                     |
-| EXML 编译 | 内嵌在 tools/lib/eui/                     | 独立包 @heron/exml-parser（待实现） |
+| 配置文件  | egretProperties.json + index.html data-\* | blakron.config.ts                     |
+| EXML 编译 | 内嵌在 tools/lib/eui/                     | 独立包 @blakron/exml-parser（待实现） |
 | 模块系统  | CommonJS                                  | ESM                                 |
 
 ---
@@ -26,9 +26,9 @@ packages/cli/
 │   ├── index.ts              # 入口（commander.js 注册命令）
 │   ├── define.ts             # 对外导出 defineConfig + 类型
 │   ├── commands/
-│   │   ├── build.ts          # heron build
-│   │   ├── create.ts         # heron create <name>
-│   │   └── clean.ts          # heron clean
+│   │   ├── build.ts          # blakron build
+│   │   ├── create.ts         # blakron create <name>
+│   │   └── clean.ts          # blakron clean
 │   ├── core/
 │   │   ├── config.ts         # 配置加载与类型定义
 │   │   ├── compiler.ts       # esbuild 编译封装
@@ -40,7 +40,7 @@ packages/cli/
 │       └── logger.ts         # 彩色日志输出
 ├── templates/
 │   └── game/                 # 默认游戏项目模板
-│       ├── heron.config.ts
+│       ├── blakron.config.ts
 │       ├── package.json
 │       ├── tsconfig.json
 │       └── src/Main.ts
@@ -51,10 +51,10 @@ packages/cli/
 
 ## 三、命令说明
 
-### `heron build`
+### `blakron build`
 
 ```
-heron build [options]
+blakron build [options]
   -t, --target <target>   构建目标: html5 | wxgame  (默认: html5)
   -m, --minify            打包并压缩输出
   --sourcemap             生成 sourcemap
@@ -86,10 +86,10 @@ loadConfig()
 
 ---
 
-### `heron create <name>`
+### `blakron create <name>`
 
 ```
-heron create <name> [options]
+blakron create <name> [options]
   --template <template>   模板: game | eui | empty  (默认: game)
 ```
 
@@ -97,7 +97,7 @@ heron create <name> [options]
 
 ---
 
-### `heron clean`
+### `blakron clean`
 
 删除 `config.output.dir`（默认 `bin-debug/`）。
 
@@ -105,10 +105,10 @@ heron create <name> [options]
 
 ## 四、配置文件
 
-`heron.config.ts` 替代旧的 `egretProperties.json` + `index.html data-*`：
+`blakron.config.ts` 替代旧的 `egretProperties.json` + `index.html data-*`：
 
 ```typescript
-import { defineConfig } from '@heron/cli';
+import { defineConfig } from '@blakron/cli';
 
 export default defineConfig({
 	target: 'html5',
@@ -157,7 +157,7 @@ export default defineConfig({
 | `gjs`     | `.thm.js`，含 generateEUI 对象 | 编译为 JS，性能最好    |
 | `json`    | 同 path                        | 别名                   |
 
-**当前状态**：`gjs` 策略的核心转换函数 `exmlToGjs()` 是最小化 stub，等待 `@heron/exml-parser` 实现后替换。
+**当前状态**：`gjs` 策略的核心转换函数 `exmlToGjs()` 是最小化 stub，等待 `@blakron/exml-parser` 实现后替换。
 
 ---
 
@@ -169,8 +169,8 @@ export default defineConfig({
 
 ```
 templates/game/
-├── heron.config.ts   # 标准配置
-├── package.json      # 依赖 @heron/cli (workspace:*)
+├── blakron.config.ts   # 标准配置
+├── package.json      # 依赖 @blakron/cli (workspace:*)
 ├── tsconfig.json     # ES2022，路径别名
 └── src/
     └── Main.ts       # 最小化入口类

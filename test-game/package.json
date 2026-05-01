@@ -3,14 +3,14 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build": "heron build",
-		"dev": "heron dev",
-		"clean": "heron clean"
+		"build": "blakron build",
+		"dev": "blakron dev",
+		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@heron/core": "workspace:*"
+		"@blakron/core": "workspace:*"
 	},
 	"devDependencies": {
-		"@heron/cli": "workspace:*"
+		"@blakron/cli": "workspace:*"
 	}
 }

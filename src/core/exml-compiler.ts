@@ -44,7 +44,7 @@ async function walkDir(dir: string, results: ExmlFile[]): Promise<void> {
 
 /**
  * Converts a single EXML file to a JS class string (gjs policy).
- * This is a minimal stub — replace with @heron/exml-parser when available.
+ * This is a minimal stub — replace with @blakron/exml-parser when available.
  */
 function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
     // Minimal: extract class name from exmlName attribute
