@@ -1,0 +1,12 @@
+{
+  "name": "test-game",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "heron build",
+    "clean": "heron clean"
+  },
+  "devDependencies": {
+    "@heron/cli": "workspace:*"
+  }
+}
