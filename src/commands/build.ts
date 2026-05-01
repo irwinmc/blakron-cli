@@ -8,17 +8,15 @@ import { logger } from '../utils/logger.js';
 
 export const buildCommand = new Command('build')
 	.description('Build the project')
-	.option('-t, --target <target>', 'Build target: html5 | wxgame', 'html5')
 	.option('-m, --minify', 'Bundle and minify output', false)
 	.option('--sourcemap', 'Generate sourcemaps', false)
-	.action(async (options: { target: string; minify: boolean; sourcemap: boolean }) => {
+	.action(async (options: { minify: boolean; sourcemap: boolean }) => {
 		const start = Date.now();
 
 		try {
 			const config = await loadConfig();
-			const target = (options.target ?? config.target) as 'html5' | 'wxgame';
 
-			logger.info(`Building for ${target}...`);
+			logger.info('Building...');
 
 			if (config.exml) {
 				logger.info('Compiling EXML...');
@@ -26,7 +24,7 @@ export const buildCommand = new Command('build')
 			}
 
 			logger.info('Compiling TypeScript...');
-			await compile(config, { target, minify: options.minify, sourcemap: options.sourcemap });
+			await compile(config, { target: 'html5', minify: options.minify, sourcemap: options.sourcemap });
 
 			logger.info('Applying target template...');
 			await applyTarget(config);

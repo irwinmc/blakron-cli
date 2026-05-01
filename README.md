@@ -20,11 +20,10 @@ pnpm add -D @blakron/cli
 blakron build [options]
 ```
 
-| 选项                    | 说明                          | 默认值  |
-| ----------------------- | ----------------------------- | ------- |
-| `-t, --target <target>` | 构建目标：`html5` \| `wxgame` | `html5` |
-| `-m, --minify`          | 压缩输出                      | `false` |
-| `--sourcemap`           | 生成 sourcemap                | `false` |
+| 选项           | 说明           | 默认值  |
+| -------------- | -------------- | ------- |
+| `-m, --minify` | 压缩输出       | `false` |
+| `--sourcemap`  | 生成 sourcemap | `false` |
 
 ### `blakron dev`
 
@@ -83,18 +82,18 @@ export default defineConfig({
 
 ### 配置项
 
-| 字段                | 类型                  | 说明                  |
-| ------------------- | --------------------- | --------------------- |
-| `target`            | `'html5' \| 'wxgame'` | 构建目标平台          |
-| `entry`             | `string`              | 入口文件路径          |
-| `output.dir`        | `string`              | 输出目录              |
-| `stage.width`       | `number`              | 舞台宽度              |
-| `stage.height`      | `number`              | 舞台高度              |
-| `stage.scaleMode`   | `string`              | 缩放模式              |
-| `stage.orientation` | `string`              | 屏幕方向              |
-| `stage.frameRate`   | `number`              | 帧率                  |
-| `stage.background`  | `string`              | 背景色                |
-| `exml`              | `object`              | EXML 编译配置（可选） |
+| 字段                | 类型      | 说明                  |
+| ------------------- | --------- | --------------------- |
+| `target`            | `'html5'` | 构建目标平台          |
+| `entry`             | `string`  | 入口文件路径          |
+| `output.dir`        | `string`  | 输出目录              |
+| `stage.width`       | `number`  | 舞台宽度              |
+| `stage.height`      | `number`  | 舞台高度              |
+| `stage.scaleMode`   | `string`  | 缩放模式              |
+| `stage.orientation` | `string`  | 屏幕方向              |
+| `stage.frameRate`   | `number`  | 帧率                  |
+| `stage.background`  | `string`  | 背景色                |
+| `exml`              | `object`  | EXML 编译配置（可选） |
 
 ## 快速开始
 

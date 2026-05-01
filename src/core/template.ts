@@ -19,16 +19,11 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 }
 
 /**
- * Generates the platform entry file (index.html for html5, game.js for wxgame).
+ * Generates the platform entry file (index.html).
  */
 export async function applyTarget(config: ProjectConfig): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
-	if (config.target === 'html5') {
-		await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config));
-	} else if (config.target === 'wxgame') {
-		await writeFile(path.join(outDir, 'game.js'), `require('./main.js');`);
-		await writeFile(path.join(outDir, 'game.json'), JSON.stringify(generateGameJson(config), null, 2));
-	}
+	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config));
 }
 
 function generateIndexHtml(config: ProjectConfig): string {
@@ -53,14 +48,6 @@ function generateIndexHtml(config: ProjectConfig): string {
     <script type="module" src="Main.js"></script>
 </body>
 </html>`;
-}
-
-function generateGameJson(config: ProjectConfig): object {
-	return {
-		deviceOrientation: config.stage.orientation === 'landscape' ? 'landscape' : 'portrait',
-		showStatusBar: false,
-		networkTimeout: { request: 5000, connectSocket: 5000 },
-	};
 }
 
 /**

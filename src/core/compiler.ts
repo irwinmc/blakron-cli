@@ -4,7 +4,7 @@ import { ensureDir } from '../utils/fs.js';
 import type { ProjectConfig } from './config.js';
 
 export interface CompileOptions {
-	target: 'html5' | 'wxgame';
+	target: 'html5';
 	minify: boolean;
 	sourcemap: boolean;
 }
@@ -13,9 +13,9 @@ export async function compile(config: ProjectConfig, options: CompileOptions): P
 	const outDir = path.resolve(config.output.dir);
 	await ensureDir(outDir);
 
-	const esTarget = options.target === 'html5' ? 'es2022' : 'es2017';
-	const format = options.target === 'wxgame' ? 'cjs' : 'esm';
-	const platform = options.target === 'wxgame' ? 'node' : 'browser';
+	const esTarget = 'es2022';
+	const format = 'esm';
+	const platform = 'browser';
 
 	const define: Record<string, string> = {
 		'process.env.DEBUG': JSON.stringify(!options.minify),
