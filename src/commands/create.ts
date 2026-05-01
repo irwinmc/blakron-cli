@@ -3,7 +3,7 @@ import { scaffoldProject } from '../core/template.js';
 import { logger } from '../utils/logger.js';
 
 export const createCommand = new Command('create')
-	.description('Create a new Heron project')
+	.description('Create a new Blakron project')
 	.argument('<name>', 'Project name')
 	.option('--template <template>', 'Project template: game | eui | empty', 'game')
 	.action(async (name: string, options: { template: string }) => {

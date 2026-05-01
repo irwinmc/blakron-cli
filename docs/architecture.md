@@ -6,15 +6,15 @@
 
 ## 一、概述
 
-`@blakron/cli` 是 Heron 游戏引擎的命令行工具，替代旧 Egret 的 `egret` CLI。
+`@blakron/cli` 是 Blakron 游戏引擎的命令行工具，替代旧 Egret 的 `egret` CLI。
 
 | 维度      | 旧 Egret CLI                              | Blakron CLI                           |
-| --------- | ----------------------------------------- | ----------------------------------- |
-| CLI 框架  | 手写参数解析                              | commander.js                        |
-| TS 编译器 | typescript-plus（魔改 tsc）               | esbuild                             |
+| --------- | ----------------------------------------- | ------------------------------------- |
+| CLI 框架  | 手写参数解析                              | commander.js                          |
+| TS 编译器 | typescript-plus（魔改 tsc）               | esbuild                               |
 | 配置文件  | egretProperties.json + index.html data-\* | blakron.config.ts                     |
 | EXML 编译 | 内嵌在 tools/lib/eui/                     | 独立包 @blakron/exml-parser（待实现） |
-| 模块系统  | CommonJS                                  | ESM                                 |
+| 模块系统  | CommonJS                                  | ESM                                   |
 
 ---
 
