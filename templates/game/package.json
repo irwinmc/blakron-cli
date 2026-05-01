@@ -7,6 +7,9 @@
 		"dev": "heron dev",
 		"clean": "heron clean"
 	},
+	"dependencies": {
+		"@heron/core": "workspace:*"
+	},
 	"devDependencies": {
 		"@heron/cli": "workspace:*"
 	}

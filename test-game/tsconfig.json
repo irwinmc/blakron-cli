@@ -1,11 +1,12 @@
 {
-    "compilerOptions": {
-        "target": "ES2022",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "strict": true,
-        "paths": {
-            "@heron/cli": ["../../src/define.ts"]
-        }
-    }
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"paths": {
+			"@heron/cli": ["../../src/define.ts"],
+			"@heron/core": ["../../../core/src/index.ts"]
+		}
+	}
 }

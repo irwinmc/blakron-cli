@@ -5,7 +5,8 @@
 		"moduleResolution": "bundler",
 		"strict": true,
 		"paths": {
-			"@heron/cli": ["../../src/define.ts"]
+			"@heron/cli": ["../../src/define.ts"],
+			"@heron/core": ["../../../core/src/index.ts"]
 		}
 	}
 }
