@@ -55,7 +55,6 @@ packages/cli/
 
 ```
 blakron build [options]
-  -t, --target <target>   构建目标: html5 | wxgame  (默认: html5)
   -m, --minify            打包并压缩输出
   --sourcemap             生成 sourcemap
 ```
@@ -66,7 +65,7 @@ blakron build [options]
 loadConfig()
   → compileExml()        # 仅当 config.exml 存在时
   → compile()            # esbuild 编译 TypeScript
-  → applyTarget()        # 生成 index.html (html5) 或 game.js+game.json (wxgame)
+  → applyTarget()        # 生成 index.html
   → copyProjectAssets()  # 复制 resource/ 目录
 ```
 
@@ -77,12 +76,11 @@ loadConfig()
 | 开发模式 | `--minify` 未设置 | 转译保留文件结构，输出到 outDir |
 | 生产模式 | `--minify`        | 单文件打包 → `main.js`          |
 
-**目标平台差异**：
+**编译参数**：
 
-| 目标   | JS 格式 | ES 版本 | 平台    | 入口文件            |
-| ------ | ------- | ------- | ------- | ------------------- |
-| html5  | ESM     | ES2022  | browser | index.html          |
-| wxgame | CJS     | ES2017  | node    | game.js + game.json |
+| JS 格式 | ES 版本 | 平台    | 入口文件   |
+| ------- | ------- | ------- | ---------- |
+| ESM     | ES2022  | browser | index.html |
 
 ---
 
@@ -163,7 +161,7 @@ export default defineConfig({
 
 ## 六、模板系统
 
-当前只有 `game` 模板。`create` 命令支持 `--template eui` 和 `--template empty`，但对应目录尚未创建。
+当前有 `game` 和 `empty` 两个模板。`create` 命令支持 `--template eui`，但对应目录等 `@blakron/eui` 就绪后补充。
 
 **game 模板内容**：
 
