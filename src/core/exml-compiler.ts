@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { ensureDir, writeFile } from '../utils/fs.js';
 import type { ProjectConfig } from './config.js';
-import { compileEXML } from '@blakron/exml-parser';
+import { compileEXML } from './exml/index.js';
 
 export interface ExmlFile {
 	filename: string;
