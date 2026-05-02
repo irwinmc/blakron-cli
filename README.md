@@ -1,6 +1,6 @@
 # @blakron/cli
 
-Blakron 游戏引擎的命令行构建工具，替代旧版 Egret CLI。基于 esbuild 实现快速编译打包。
+Blakron 游戏引擎的命令行构建工具，替代旧版 Egret CLI。基于 esbuild 实现快速编译打包，内置 EXML 皮肤文件解析与编译。
 
 ## 安装
 
@@ -56,6 +56,33 @@ blakron create <name> [options]
 
 ```bash
 blakron clean
+```
+
+## 内置 EXML 编译器
+
+CLI 内置了 EXML 皮肤文件的解析器和代码生成器（原 `@blakron/exml-parser` 已合并），在构建时自动将 `.exml` 文件编译为 JavaScript 模块。
+
+### 功能特性
+
+- **XML 解析**：解析 EXML（基于 XML 的皮肤描述格式）
+- **AST / IR 生成**：转换为中间表示（SkinIR）
+- **代码生成**：输出 ESM 兼容的 JavaScript 工厂函数
+- **组件注册表**：内置 `eui:*` / `egret:*` 命名空间映射
+- **状态支持**：解析皮肤状态定义和状态属性覆盖
+- **百分比布局**：自动识别 `100%` 并转换为 `percentWidth` / `percentHeight`
+- **数据绑定**：解析 `{expression}` 绑定语法
+
+### EXML 配置
+
+在 `blakron.config.ts` 中配置 EXML 编译：
+
+```ts
+export default defineConfig({
+	// ...其他配置
+	exml: {
+		// EXML 编译选项（可选）
+	},
+});
 ```
 
 ## 配置文件
