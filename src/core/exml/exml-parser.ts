@@ -85,6 +85,17 @@ class ParseContext {
 				this._width = this.parseValue(attr.value);
 			} else if (attr.name === 'height') {
 				this._height = this.parseValue(attr.value);
+			} else if (attr.name === 'states') {
+				// Shorthand: states="up,down,disabled" → expand to StateDef list
+				const stateNames = attr.value
+					.split(',')
+					.map(s => s.trim())
+					.filter(Boolean);
+				for (const name of stateNames) {
+					if (!this.states.find(s => s.name === name)) {
+						this.states.push({ name, stateGroups: [], overrides: [] });
+					}
+				}
 			} else if (attr.name === 'xmlns' || attr.name.startsWith('xmlns:')) {
 				// Skip namespace declarations
 			}
@@ -166,6 +177,10 @@ class ParseContext {
 	/** Parse a State element and its overrides */
 	private parseState(el: XElement): StateDef {
 		const nameAttr = this.getAttr(el, 'name') ?? '';
+		const stateGroups = (this.getAttr(el, 'stateGroups') ?? '')
+			.split(',')
+			.map(s => s.trim())
+			.filter(Boolean);
 		const overrides: StateOverride[] = [];
 
 		for (const child of filterElements(el.children)) {
@@ -177,7 +192,7 @@ class ParseContext {
 			}
 		}
 
-		return { name: nameAttr, overrides };
+		return { name: nameAttr, stateGroups, overrides };
 	}
 
 	/** Parse an AddItems override */
@@ -202,6 +217,9 @@ class ParseContext {
 		};
 	}
 
+	/** Collected IDs for duplicate detection */
+	private _idSet = new Set<string>();
+
 	/** Parse a component XML element into a SkinNode */
 	private parseNode(el: XElement): SkinNode | null {
 		const cls = localName(el.name);
@@ -217,6 +235,12 @@ class ParseContext {
 
 		// Generate variable name
 		const id = this.getAttr(el, 'id');
+		if (id) {
+			if (this._idSet.has(id)) {
+				throw new Error(`EXML: duplicate id "${id}" in skin`);
+			}
+			this._idSet.add(id);
+		}
 		const varName = id || this.genVar(cls);
 
 		// Track skin parts

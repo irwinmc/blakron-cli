@@ -120,6 +120,8 @@ export type StateOverride = StateAddItems | StateSetProperty | StateSetStateProp
 export interface StateDef {
 	/** State name (e.g. "up", "down", "disabled") */
 	readonly name: string;
+	/** State groups this state belongs to */
+	readonly stateGroups: string[];
 	/** State-specific overrides */
 	readonly overrides: StateOverride[];
 }

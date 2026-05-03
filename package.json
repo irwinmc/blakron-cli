@@ -1,6 +1,6 @@
 {
 	"name": "@blakron/cli",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Blakron CLI - build tool for Blakron game engine",
 	"type": "module",
 	"bin": {

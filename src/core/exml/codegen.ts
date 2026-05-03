@@ -87,6 +87,7 @@ class CodeGen {
 			}
 			const uiImports = moduleImports.get('@blakron/ui')!;
 			uiImports.add('State');
+			uiImports.add('SetProperty'); // always needed for node state-specific props
 			for (const state of this.ir.states) {
 				for (const override of state.overrides) {
 					uiImports.add(override.type);
@@ -170,9 +171,16 @@ class CodeGen {
 
 	private emitNodeCreation(node: SkinNode): void {
 		this.line(`const ${node.varName} = new ${node.className}();`);
-		// If node has an id, also set it on the skin
+		// If node has an id, set it on the skin (skin part)
 		if (node.id) {
 			this.line(`skin.${node.id} = ${node.varName};`);
+		} else {
+			// If node has state-specific properties, register it on skin by varName
+			// so SetProperty can resolve it via skin.getPart(varName)
+			const hasStateProps = node.properties.some(p => p.state);
+			if (hasStateProps) {
+				this.line(`skin.${node.varName} = ${node.varName};`);
+			}
 		}
 	}
 
@@ -270,11 +278,24 @@ class CodeGen {
 	}
 
 	private generateStateExpr(state: StateDef): string {
-		if (state.overrides.length === 0) {
+		// Collect overrides: explicit overrides from State element + state-specific props from nodes
+		const allOverrides = [...state.overrides];
+
+		// Add SetProperty overrides from node properties with this state name or matching stateGroup
+		const nodeOverrides = this.collectStatePropertyOverrides(this.ir.children);
+		for (const { stateName, targetId, propName, value } of nodeOverrides) {
+			// Match by state name or by stateGroup membership
+			const matches = stateName === state.name || state.stateGroups.includes(stateName);
+			if (matches) {
+				allOverrides.push({ type: 'SetProperty', targetId, name: propName, value });
+			}
+		}
+
+		if (allOverrides.length === 0) {
 			return `new State("${state.name}")`;
 		}
 
-		const overrides = state.overrides.map(o => this.generateOverrideExpr(o)).join(', ');
+		const overrides = allOverrides.map(o => this.generateOverrideExpr(o)).join(', ');
 		return `new State("${state.name}", [${overrides}])`;
 	}
 
@@ -294,29 +315,20 @@ class CodeGen {
 	}
 
 	private emitStatePropertyOverrides(): void {
-		// Collect all state-specific properties from all nodes
-		const overrides = this.collectStatePropertyOverrides(this.ir.children);
-
-		// Merge into existing states
-		for (const { stateName, targetVar, propName, value } of overrides) {
-			const state = this.ir.states.find(s => s.name === stateName);
-			if (state) {
-				// We need to add this to the state's overrides array
-				// Already handled in the parser — just emit them here
-			}
-		}
+		// State-specific properties are now handled directly in generateStateExpr.
+		// This method is kept for potential future use.
 	}
 
 	private collectStatePropertyOverrides(
 		nodes: readonly SkinNode[],
-	): { stateName: string; targetVar: string; propName: string; value: PropertyValue }[] {
-		const result: { stateName: string; targetVar: string; propName: string; value: PropertyValue }[] = [];
+	): { stateName: string; targetId: string; propName: string; value: PropertyValue }[] {
+		const result: { stateName: string; targetId: string; propName: string; value: PropertyValue }[] = [];
 		for (const node of nodes) {
 			for (const prop of node.properties) {
 				if (prop.state) {
 					result.push({
 						stateName: prop.state,
-						targetVar: node.varName,
+						targetId: node.id ?? node.varName,
 						propName: prop.name,
 						value: prop.value,
 					});
