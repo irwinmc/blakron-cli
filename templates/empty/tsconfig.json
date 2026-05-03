@@ -3,10 +3,6 @@
 		"target": "ES2022",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"strict": true,
-		"paths": {
-			"@blakron/cli": ["../../src/define.ts"],
-			"@blakron/core": ["../../../core/src/index.ts"]
-		}
+		"strict": true
 	}
 }

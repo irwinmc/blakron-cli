@@ -8,9 +8,11 @@
 		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@blakron/core": "workspace:*"
+		"@blakron/core": "^0.3.3",
+		"@blakron/game": "^0.1.2",
+		"@blakron/ui": "^0.2.0"
 	},
 	"devDependencies": {
-		"@blakron/cli": "workspace:*"
+		"@blakron/cli": "^0.1.1"
 	}
 }

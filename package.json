@@ -1,6 +1,6 @@
 {
 	"name": "@blakron/cli",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Blakron CLI - build tool for Blakron game engine",
 	"type": "module",
 	"bin": {
@@ -24,7 +24,7 @@
 		"@types/node": "^22.0.0",
 		"tsx": "^4.21.0",
 		"typescript": "^5.6.0",
-		"vitest": "^3.0.0"
+		"vitest": "^4.1.4"
 	},
 	"packageManager": "pnpm@10.33.0"
 }
