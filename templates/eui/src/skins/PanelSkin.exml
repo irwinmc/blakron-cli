@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.PanelSkin" width="300" height="200"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect width="300" height="200"
+        fillColor="0x16213e"
+        strokeColor="0x0f3460"
+        strokeWeight="1"/>
+    <eui:Rect width="300" height="36"
+        fillColor="0x0f3460"/>
+    <eui:Label id="titleDisplay"
+        x="12" y="0" width="276" height="36"
+        verticalAlign="middle"
+        textColor="0xffffff" size="14" bold="true"/>
+    <eui:Group id="contentGroup" y="36" width="300" height="164"/>
+</eui:Skin>

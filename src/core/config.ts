@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import { exists } from '../utils/fs.js';
+import { ConfigError } from './errors.js';
 
 export type BuildTarget = 'html5';
 export type ExmlPolicy = 'path' | 'content' | 'gjs' | 'json';
@@ -49,16 +50,51 @@ const DEFAULTS: ProjectConfig = {
 	},
 };
 
+const VALID_SCALE_MODES = [
+	'showAll',
+	'noScale',
+	'exactFit',
+	'noBorder',
+	'fixedHeight',
+	'fixedWidth',
+	'fixedNarrow',
+	'fixedWide',
+] as const;
+
 export async function loadConfig(): Promise<ProjectConfig> {
 	const configPath = path.resolve('blakron.config.ts');
 	const jsConfigPath = path.resolve('blakron.config.js');
+
+	let config: ProjectConfig;
 
 	if ((await exists(configPath)) || (await exists(jsConfigPath))) {
 		// Dynamic import works for both .js and pre-compiled .ts (via tsx/ts-node)
 		const mod = await import((await exists(configPath)) ? configPath : jsConfigPath);
 		const userConfig: ProjectConfig = mod.default ?? mod;
-		return { ...DEFAULTS, ...userConfig, stage: { ...DEFAULTS.stage, ...userConfig.stage } };
+		config = { ...DEFAULTS, ...userConfig, stage: { ...DEFAULTS.stage, ...userConfig.stage } };
+	} else {
+		config = DEFAULTS;
 	}
 
-	return DEFAULTS;
+	// Validate stage.frameRate
+	if (!Number.isInteger(config.stage.frameRate) || config.stage.frameRate <= 0) {
+		throw new ConfigError(
+			`Invalid config: stage.frameRate must be a positive integer, got ${config.stage.frameRate}`,
+		);
+	}
+
+	// Validate stage.scaleMode
+	if (!VALID_SCALE_MODES.includes(config.stage.scaleMode as (typeof VALID_SCALE_MODES)[number])) {
+		throw new ConfigError(
+			`Invalid config: stage.scaleMode must be one of ${VALID_SCALE_MODES.map(m => `'${m}'`).join(', ')}, got '${config.stage.scaleMode}'`,
+		);
+	}
+
+	// Validate entry file exists
+	const entryPath = path.resolve(config.entry);
+	if (!(await exists(entryPath))) {
+		throw new ConfigError(`Invalid config: entry file '${config.entry}' does not exist`);
+	}
+
+	return config;
 }

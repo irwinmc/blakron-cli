@@ -15,7 +15,7 @@
 | 创建项目   | `egret create`                            | `blakron create`                 | ✅ game / empty 模板可用       |
 | 清理命令   | `egret clean`                             | `blakron clean`                  | ✅                             |
 | 开发服务器 | `egret startserver`                       | `blakron dev`                    | ✅ esbuild watch + live reload |
-| EXML 编译  | 内嵌在 tools/lib/eui/                     | `@blakron/exml-parser`（独立包） | ⚠️ stub                        |
+| EXML 编译  | 内嵌在 tools/lib/eui/                     | 内嵌 EXML 编译管线             | ✅ XML → IR → CodeGen             |
 | 模块系统   | CommonJS                                  | ESM                              | ✅                             |
 
 ---
@@ -48,23 +48,19 @@
 
 ## 三、待完成项
 
-### ⚠️ EXML 编译器（stub）
+### ~~⚠️ EXML 编译器（stub）~~ ✅ 已完成
 
-`src/core/exml-compiler.ts` 中的 `exmlToGjs()` 函数是最小化占位符：
+EXML 编译管线已在 `src/core/exml/` 目录下完整实现：
 
-```typescript
-// 当前实现：只提取类名，不解析 EXML 节点结构
-function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
-	const classMatch = exmlFile.contents.match(/exmlName="([^"]+)"/);
-	const className = classMatch ? classMatch[1] : path.basename(exmlFile.filename, '.exml');
-	const code = `(function(){\n  var e = new eui.Skin();\n  // generated from ${path.basename(exmlFile.filename)}\n  return e;\n})`;
-	return { code, className };
-}
-```
+- `xml-parser.ts`：轻量级 XML 解析器
+- `ast.ts`：SkinIR 中间表示类型定义
+- `registry.ts`：静态组件注册表
+- `exml-parser.ts`：XML → SkinIR 解析器
+- `codegen.ts`：SkinIR → ESM JavaScript 代码生成器
 
-**影响**：使用 `publishPolicy: 'gjs'` 的项目无法正确编译 EXML 皮肤。`path` / `content` / `json` 策略不受影响（只做文件收集，不解析内容）。
+`exml-compiler.ts` 的 `exmlToGjs()` 已替换为调用 `compileEXML()` 完整实现。
 
-**解决方案**：等待 `@blakron/exml-parser` 包实现后替换此函数。
+支持所有 `publishPolicy`：`path`、`content`、`gjs`、`json`。
 
 ---
 
@@ -74,13 +70,21 @@ function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
 | ------- | ------------- | ----------------------------------- |
 | `game`  | ✅ 可用       | 标准游戏项目                        |
 | `empty` | ✅ 可用       | 最小化项目，直接使用 @blakron/core  |
-| `eui`   | ⬜ 目录不存在 | 含 EUI 的项目，等 @blakron/eui 就绪 |
+| `eui`   | ✅ 可用       | 含 EUI 的项目，含 17 个默认 EXML 皮肤 |
 
 ---
 
 ### ~~⬜ 开发服务器~~ ✅ 已完成
 
 `blakron dev` 命令已实现，基于 esbuild watch + SSE live reload。
+
+### ~~⬜ 配置验证~~ ✅ 已完成
+
+`loadConfig()` 现在验证 `stage.frameRate`、`stage.scaleMode`、`entry` 文件存在性。
+
+### ~~⬜ `build --watch` / `build --analyze`~~ ✅ 已完成
+
+`blakron build` 新增 `--watch`（文件监听自动重编译）和 `--analyze`（bundle 体积分析）选项。
 
 ---
 

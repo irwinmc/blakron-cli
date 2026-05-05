@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.ComboBoxSkin" width="200" height="36"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:states>
+        <eui:State name="normal"/>
+        <eui:State name="open"/>
+        <eui:State name="disabled"/>
+    </eui:states>
+    <!-- Trigger background -->
+    <eui:Rect width="200" height="36"
+        fillColor="0x1a1a2e"
+        fillColor.open="0x16213e"
+        fillColor.disabled="0x16213e"
+        strokeColor="0x0f3460"
+        strokeColor.open="0x6c5ce7"
+        strokeColor.disabled="0x4a5459"
+        strokeWeight="1"/>
+    <!-- Selected item label -->
+    <eui:Label id="labelDisplay"
+        x="10" y="0" width="164" height="36"
+        verticalAlign="middle"
+        textColor="0xdfe6e9"
+        textColor.disabled="0x636e72"
+        size="14"/>
+    <!-- Dropdown arrow indicator -->
+    <eui:Label x="172" y="0" width="24" height="36"
+        textAlign="center" verticalAlign="middle"
+        textColor="0x636e72"
+        textColor.open="0x6c5ce7"
+        text="▼"
+        size="10"/>
+    <!-- Dropdown panel -->
+    <eui:Scroller id="dropDown" x="0" y="36" width="200" height="180" visible="false">
+        <eui:List id="list" width="200" height="180"/>
+    </eui:Scroller>
+</eui:Skin>

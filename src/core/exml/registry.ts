@@ -57,6 +57,10 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 	ViewStack: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
 	UILayer: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
 
+	// Text input controls
+	TextInput: { module: '@blakron/ui' },
+	EditableText: { module: '@blakron/ui' },
+
 	// Layouts
 	Layout: { module: '@blakron/ui' },
 	BasicLayout: { module: '@blakron/ui' },
@@ -89,6 +93,9 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 	Event: { module: '@blakron/core' },
 	EventDispatcher: { module: '@blakron/core' },
 	Timer: { module: '@blakron/core' },
+
+	// Complex controls
+	ComboBox: { module: '@blakron/ui', defaultProperty: 'dataProvider' },
 
 	// Animation
 	Animation: { module: '@blakron/ui' },

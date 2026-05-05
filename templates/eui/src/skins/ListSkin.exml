@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.ListSkin" width="200" height="200"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect width="200" height="200"
+        fillColor="0x1a1a2e"
+        strokeColor="0x0f3460"
+        strokeWeight="1"/>
+    <eui:Scroller id="scroller" width="200" height="200">
+        <eui:DataGroup id="dataGroup" width="200" height="200"/>
+    </eui:Scroller>
+</eui:Skin>

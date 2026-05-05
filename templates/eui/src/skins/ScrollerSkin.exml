@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.ScrollerSkin" width="200" height="200"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Group id="viewport" width="200" height="200"/>
+    <eui:HScrollBar id="horizontalScrollBar" y="188" width="200" height="12"/>
+    <eui:VScrollBar id="verticalScrollBar" x="188" width="12" height="200"/>
+</eui:Skin>

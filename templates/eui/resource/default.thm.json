@@ -1,0 +1,26 @@
+{
+	"skins": {
+		"Button": "skins.ButtonSkin",
+		"CheckBox": "skins.CheckBoxSkin",
+		"RadioButton": "skins.RadioButtonSkin",
+		"ToggleButton": "skins.ToggleButtonSkin",
+		"ToggleSwitch": "skins.ToggleSwitchSkin",
+		"Label": "skins.LabelSkin",
+		"Image": "skins.ImageSkin",
+		"Panel": "skins.PanelSkin",
+		"ProgressBar": "skins.ProgressBarSkin",
+		"HSlider": "skins.HSliderSkin",
+		"VSlider": "skins.VSliderSkin",
+		"HScrollBar": "skins.HScrollBarSkin",
+		"VScrollBar": "skins.VScrollBarSkin",
+		"TextInput": "skins.TextInputSkin",
+		"Scroller": "skins.ScrollerSkin",
+		"ItemRenderer": "skins.ItemRendererSkin",
+		"List": "skins.ListSkin",
+		"TabBar": "skins.TabBarSkin",
+		"ViewStack": "skins.ViewStackSkin",
+		"Group": "skins.GroupSkin",
+		"ComboBox": "skins.ComboBoxSkin"
+	},
+	"exmls": []
+}

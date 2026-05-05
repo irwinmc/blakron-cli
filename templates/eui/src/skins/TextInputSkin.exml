@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.TextInputSkin" width="200" height="36"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:states>
+        <eui:State name="normal"/>
+        <eui:State name="disabled"/>
+        <eui:State name="normalWithPrompt"/>
+        <eui:State name="disabledWithPrompt"/>
+    </eui:states>
+    <eui:Rect width="200" height="36"
+        fillColor="0x1a1a2e"
+        fillColor.disabled="0x16213e"
+        strokeColor="0x636e72"
+        strokeColor.normal="0x0f3460"
+        strokeColor.disabled="0x4a5459"
+        strokeWeight="1"/>
+    <eui:EditableText id="textDisplay"
+        x="8" y="0" width="184" height="36"
+        verticalAlign="middle"
+        textColor="0xdfe6e9"
+        size="14"/>
+    <eui:Label id="promptDisplay"
+        x="8" y="0" width="184" height="36"
+        verticalAlign="middle"
+        textColor="0x636e72"
+        size="14"/>
+</eui:Skin>

@@ -20,10 +20,12 @@ Compile and bundle the project.
 blakron build [options]
 ```
 
-| Option           | Description    | Default |
-| ---------------- | -------------- | ------- |
-| `-m, --minify`   | Minify output  | `false` |
-| `--sourcemap`    | Emit sourcemap | `false` |
+| Option           | Description                                      | Default |
+| ---------------- | ------------------------------------------------ | ------- |
+| `-m, --minify`   | Minify output                                    | `false` |
+| `--sourcemap`    | Emit sourcemap                                   | `false` |
+| `--watch`        | Watch mode — rebuild on file changes             | `false` |
+| `--analyze`      | Output bundle size analysis (esbuild metafile)   | `false` |
 
 ### `blakron dev`
 
@@ -46,9 +48,17 @@ Scaffold a new project from a template.
 blakron create <name> [options]
 ```
 
-| Option                  | Description                   | Default |
-| ----------------------- | ----------------------------- | ------- |
-| `--template <template>` | Template: `game` \| `empty`   | `game`  |
+| Option                  | Description                              | Default |
+| ----------------------- | ---------------------------------------- | ------- |
+| `--template <template>` | Template: `game` \| `eui` \| `empty`    | `game`  |
+
+**Templates:**
+
+| Template | Description |
+|----------|-------------|
+| `game`   | Standard game project with `@blakron/core` + `@blakron/game` |
+| `eui`    | EUI project with `@blakron/ui`, 18 default EXML skins, and theme configuration |
+| `empty`  | Minimal project with only `@blakron/core` |
 
 ### `blakron clean`
 
@@ -80,10 +90,36 @@ Configure EXML compilation in `blakron.config.ts`:
 export default defineConfig({
 	// ... other config
 	exml: {
-		// EXML compiler options (optional)
+		publishPolicy: 'gjs',            // path | content | gjs | json
+		themeFile: 'resource/default.thm.json',
 	},
 });
 ```
+
+### Default Skins (EUI template)
+
+The `eui` template ships with 18 default EXML skins for all `@blakron/ui` components:
+
+| Component | Skin Parts |
+|-----------|-----------|
+| Button | bg, labelDisplay |
+| CheckBox | box, labelDisplay |
+| RadioButton | dot, labelDisplay |
+| ToggleButton | bg, labelDisplay |
+| ToggleSwitch | knob |
+| Label | labelDisplay |
+| Image | imageDisplay |
+| Panel | titleDisplay, contentGroup |
+| ProgressBar | thumb, labelDisplay |
+| HSlider / VSlider | track, thumb |
+| HScrollBar / VScrollBar | thumb |
+| TextInput | textDisplay, promptDisplay |
+| ComboBox | labelDisplay, dropDown, list |
+| Scroller | viewport, horizontalScrollBar, verticalScrollBar |
+| List | scroller, dataGroup |
+| ItemRenderer | labelDisplay |
+| TabBar | dataGroup |
+| ViewStack / Group | contentGroup |
 
 ## Configuration
 
@@ -120,21 +156,20 @@ export default defineConfig({
 | `stage.orientation`  | `string`  | Screen orientation        |
 | `stage.frameRate`    | `number`  | Frame rate               |
 | `stage.background`   | `string`  | Background color         |
-| `exml`               | `object`  | EXML compiler options    |
+| `exml.publishPolicy` | `string`  | EXML output strategy     |
+| `exml.themeFile`     | `string`  | Theme JSON file path     |
 
 ## Quick Start
 
 ```bash
-# Scaffold a project
+# Scaffold a game project
 blakron create my-game
-
-# Enter the directory
-cd my-game
-pnpm install
-
-# Development
+cd my-game && pnpm install
 blakron dev
 
-# Build
-blakron build
+# Or scaffold an EUI project with default skins
+blakron create my-app --template eui
+cd my-app && pnpm install
+blakron build   # compiles EXML skins
+blakron dev     # start dev server
 ```

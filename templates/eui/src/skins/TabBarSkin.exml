@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.TabBarSkin" width="400" height="40"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect width="400" height="40" fillColor="0x16213e"/>
+    <eui:DataGroup id="dataGroup" width="400" height="40"/>
+</eui:Skin>

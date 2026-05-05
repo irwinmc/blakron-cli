@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.ProgressBarSkin" width="200" height="10"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect width="200" height="10"
+        fillColor="0x2d3436"
+        strokeColor="0x636e72"
+        strokeWeight="1"/>
+    <eui:Rect id="thumb" width="0" height="10"
+        fillColor="0x6c5ce7"/>
+    <eui:Label id="labelDisplay"
+        x="0" y="-20" width="200" height="18"
+        textAlign="center" verticalAlign="middle"
+        textColor="0xdfe6e9" size="12"/>
+</eui:Skin>

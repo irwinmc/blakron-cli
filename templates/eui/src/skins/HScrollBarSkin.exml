@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.HScrollBarSkin" width="200" height="12"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect width="200" height="12" fillColor="0x2d3436" alpha="0.7"/>
+    <eui:Rect id="thumb" width="60" height="8" x="0" y="2" fillColor="0x636e72"/>
+</eui:Skin>

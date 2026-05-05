@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.ButtonSkin" width="160" height="44"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:states>
+        <eui:State name="up"/>
+        <eui:State name="down"/>
+        <eui:State name="disabled"/>
+        <eui:State name="upAndSelected"/>
+        <eui:State name="downAndSelected"/>
+        <eui:State name="disabledAndSelected"/>
+    </eui:states>
+    <eui:Rect id="bg" width="160" height="44"
+        fillColor="0x6c5ce7"
+        fillColor.down="0x5a4bd1"
+        fillColor.disabled="0x636e72"
+        fillColor.upAndSelected="0x00b894"
+        fillColor.downAndSelected="0x00a381"
+        fillColor.disabledAndSelected="0x636e72"
+        strokeColor="0x4a3db5"
+        strokeColor.down="0x3d3494"
+        strokeColor.disabled="0x4a5459"
+        strokeWeight="1"/>
+    <eui:Label id="labelDisplay"
+        x="0" y="0" width="160" height="44"
+        textAlign="center" verticalAlign="middle"
+        textColor="0xffffff"
+        textColor.disabled="0xb2bec3"
+        size="16"/>
+</eui:Skin>

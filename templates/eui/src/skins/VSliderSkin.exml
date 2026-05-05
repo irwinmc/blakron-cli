@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.VSliderSkin" width="30" height="200"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:Rect id="track" x="12" y="10" width="6" height="180"
+        fillColor="0x2d3436"
+        strokeColor="0x636e72"
+        strokeWeight="1"/>
+    <eui:Rect id="thumb" x="5" y="0" width="20" height="20"
+        fillColor="0x6c5ce7"
+        strokeColor="0x4a3db5"
+        strokeWeight="1"/>
+</eui:Skin>
