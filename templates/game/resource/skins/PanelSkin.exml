@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<eui:Skin class="skins.PanelSkin" width="300" height="240"
+<eui:Skin class="skins.PanelSkin" width="300" height="200"
     xmlns:eui="http://ns.egret.com/eui">
-    <eui:states>
-        <eui:State name="normal"/>
-        <eui:State name="disabled"/>
-    </eui:states>
-    <eui:Rect width="300" height="240"
-        fillColor="0x1a1a2e"
+    <eui:Rect width="300" height="200"
+        fillColor="0x16213e"
         strokeColor="0x0f3460"
         strokeWeight="1"/>
     <eui:Rect width="300" height="36"
-        fillColor="0x16213e"/>
+        fillColor="0x0f3460"/>
     <eui:Label id="titleDisplay"
-        x="10" y="0" width="280" height="36"
+        x="12" y="0" width="276" height="36"
         verticalAlign="middle"
-        textColor="0xdfe6e9"
-        size="14"/>
-    <eui:Group id="contentGroup" x="0" y="36" width="300" height="204"/>
+        textColor="0xffffff" size="14" bold="true"/>
+    <eui:Group id="contentGroup" y="36" width="300" height="164"/>
 </eui:Skin>
