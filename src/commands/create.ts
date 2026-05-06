@@ -5,9 +5,9 @@ import { logger } from '../utils/logger.js';
 export const createCommand = new Command('create')
 	.description('Create a new Blakron project')
 	.argument('<name>', 'Project name')
-	.option('--template <template>', 'Project template: game | eui | empty', 'game')
+	.option('--template <template>', 'Project template: game | empty', 'game')
 	.action(async (name: string, options: { template: string }) => {
-		const validTemplates = ['game', 'eui', 'empty'];
+		const validTemplates = ['game', 'empty'];
 		if (!validTemplates.includes(options.template)) {
 			logger.error(`Unknown template "${options.template}". Available: ${validTemplates.join(', ')}`);
 			process.exit(1);

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="skins.HSliderSkin" width="200" height="28"
+    xmlns:eui="http://ns.egret.com/eui">
+    <eui:states>
+        <eui:State name="normal"/>
+        <eui:State name="disabled"/>
+    </eui:states>
+    <eui:Rect id="track" x="0" y="10" width="200" height="8"
+        fillColor="0x16213e"
+        fillColor.disabled="0x2d3436"
+        strokeColor="0x0f3460"
+        strokeColor.disabled="0x4a5459"
+        strokeWeight="1"/>
+    <eui:Rect id="thumb" x="0" y="4" width="20" height="20"
+        fillColor="0x6c5ce7"
+        fillColor.disabled="0x636e72"/>
+</eui:Skin>

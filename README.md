@@ -14,7 +14,6 @@ Use `npx` to scaffold a new project — no installation needed:
 
 ```bash
 npx @blakron/cli create my-game
-npx @blakron/cli create my-app --template eui
 npx @blakron/cli create my-lib --template empty
 ```
 
@@ -46,25 +45,23 @@ Scaffold a new project from a template.
 blakron create <name> [options]
 ```
 
-| Option                  | Description                                  | Default |
-| ----------------------- | -------------------------------------------- | ------- |
-| `--template <template>` | Template: `game` \| `eui` \| `empty`        | `game`  |
+| Option                  | Description                            | Default |
+| ----------------------- | -------------------------------------- | ------- |
+| `--template <template>` | Template: `game` \| `empty`            | `game`  |
 
 **Templates:**
 
-| Template | Extends     | Dependencies                            | Description                                            |
-| -------- | ----------- | --------------------------------------- | ------------------------------------------------------ |
-| `empty`  | `Sprite`    | `@blakron/core`                         | Minimal project — pure Canvas rendering, no UI         |
-| `game`   | `Sprite`    | `@blakron/core` + `@blakron/game`       | Standard game project with Shape/TextField scene       |
-| `eui`    | `UILayer`   | `@blakron/core` + `@blakron/ui`         | EUI component project with 21 default EXML skins      |
+| Template | Extends    | Dependencies                                        | Description                                        |
+| -------- | ---------- | --------------------------------------------------- | -------------------------------------------------- |
+| `game`   | `Sprite`   | `@blakron/core` + `@blakron/game` + `@blakron/ui`   | Full-featured project with resource loading, scene building, and Tween animation |
+| `empty`  | `Sprite`   | `@blakron/core`                                     | Minimal project — pure Canvas rendering, no extra dependencies |
 
-**Lifecycle comparison:**
+**Lifecycle:**
 
-| Template | Entry class              | Lifecycle                                                                                        |
-| -------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| `empty`  | `Main extends Sprite`    | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                                  |
-| `game`   | `Main extends Sprite`    | constructor → `ADDED_TO_STAGE` → `onAddToStage` → `runGame` → `createGameScene`                  |
-| `eui`    | `Main extends UILayer`   | `createChildren` → init Theme → `runGame` → `loadResource` → `createGameScene` → `startAnimation` |
+| Template | Entry class           | Lifecycle                                                                                        |
+| -------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `game`   | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage` → `runGame` → `loadResource` → `createGameScene` → `startAnimation` |
+| `empty`  | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                                  |
 
 ### `blakron build`
 
@@ -89,9 +86,9 @@ Start a development server with auto-recompilation on file changes (manual brows
 blakron dev [options]
 ```
 
-| Option               | Description      | Default |
-| -------------------- | ---------------- | ------- |
-| `-p, --port <port>`  | Port to listen   | `3000`  |
+| Option               | Description        | Default |
+| -------------------- | ------------------ | ------- |
+| `-p, --port <port>`  | Port to listen     | `3000`  |
 | `--sourcemap`        | Generate sourcemaps | `false` |
 
 ### `blakron clean`
@@ -145,7 +142,7 @@ export default {
 
 ## EXML Skin Compiler
 
-The CLI includes a complete EXML skin parsing and code generation pipeline (XML → SkinIR → ESM JavaScript). `.exml` files are compiled automatically during `blakron build`.
+The CLI includes a complete EXML skin parsing and code generation pipeline (XML → SkinIR → ESM JavaScript). `.exml` files placed in the `resource/` directory are compiled automatically during `blakron build`.
 
 ### Features
 
@@ -169,69 +166,34 @@ resource/skins/ButtonSkin.exml
     ButtonSkin.gjs.js (ESM factory)
 ```
 
-### Default EUI Skins (21)
+## Project Structure
 
-Projects created with `--template eui` include the following default EXML skins:
-
-| Skin                | Component     | Skin Parts                                         |
-| ------------------- | ------------- | -------------------------------------------------- |
-| `ButtonSkin`        | Button        | bg, labelDisplay                                   |
-| `CheckBoxSkin`      | CheckBox      | box, labelDisplay                                  |
-| `RadioButtonSkin`   | RadioButton   | dot, labelDisplay                                  |
-| `ToggleButtonSkin`  | ToggleButton  | bg, labelDisplay                                   |
-| `ToggleSwitchSkin`  | ToggleSwitch  | knob                                               |
-| `LabelSkin`         | Label         | labelDisplay                                       |
-| `ImageSkin`         | Image         | imageDisplay                                       |
-| `PanelSkin`         | Panel         | titleDisplay, contentGroup                         |
-| `ProgressBarSkin`   | ProgressBar   | thumb, labelDisplay                                |
-| `HSliderSkin`       | HSlider       | track, thumb                                       |
-| `VSliderSkin`       | VSlider       | track, thumb                                       |
-| `HScrollBarSkin`    | HScrollBar    | thumb                                              |
-| `VScrollBarSkin`    | VScrollBar    | thumb                                              |
-| `TextInputSkin`     | TextInput     | textDisplay, promptDisplay                         |
-| `ComboBoxSkin`      | ComboBox      | labelDisplay, dropDown, list                       |
-| `ScrollerSkin`      | Scroller      | viewport, horizontalScrollBar, verticalScrollBar   |
-| `ListSkin`          | List          | scroller, dataGroup                                |
-| `ItemRendererSkin`  | ItemRenderer  | labelDisplay                                       |
-| `TabBarSkin`        | TabBar        | dataGroup                                          |
-| `ViewStackSkin`     | ViewStack     | contentGroup                                       |
-| `GroupSkin`         | Group         | contentGroup                                       |
-
-### EUI Project Structure
-
-A project created with `--template eui` has the following structure:
+A project created with the default template (`game`) has the following structure:
 
 ```
-my-app/
+my-game/
 ├── blakron.config.ts          # Project config (includes exml options)
-├── package.json
-├── tsconfig.json
+├── package.json               # Dependencies & scripts
+├── tsconfig.json              # TypeScript config
 ├── resource/
 │   ├── default.res.json       # Resource config
 │   ├── default.thm.json       # Theme file: component → skin mapping
-│   └── skins/                 # EXML skin directory
+│   └── skins/                 # EXML skin directory (21 default skins)
 │       ├── ButtonSkin.exml
-│       ├── CheckBoxSkin.exml
-│       ├── ComboBoxSkin.exml
-│       ├── ... (21 total)
+│       ├── ...
 │       └── ViewStackSkin.exml
 └── src/
-    └── Main.ts                # Entry: class Main extends UILayer
+    ├── Main.ts                # Entry: class Main extends Sprite
+    └── LoadingUI.ts           # Loading progress display
 ```
 
 ## Quick Start
 
 ```bash
-# Standard game project
+# Full-featured game project (default)
 npx @blakron/cli create my-game
 cd my-game && pnpm install
 pnpm dev
-
-# EUI component project
-npx @blakron/cli create my-app --template eui
-cd my-app && pnpm install
-pnpm build   # compile EXML skins
-pnpm dev     # start dev server
 
 # Minimal project
 npx @blakron/cli create my-lib --template empty

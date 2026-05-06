@@ -10,4 +10,8 @@ export default {
 		frameRate: 60,
 		background: '#000000',
 	},
+	exml: {
+		publishPolicy: 'gjs',
+		themeFile: 'resource/default.thm.json',
+	},
 };

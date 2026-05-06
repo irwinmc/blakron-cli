@@ -26,7 +26,7 @@
 | `--sourcemap`      | `blakron build`  | 生成 sourcemap                   |
 | `-p, --port`       | `blakron dev`    | 指定开发服务器端口（默认 3000）  |
 | `--sourcemap`      | `blakron dev`    | 生成 sourcemap                   |
-| `--template`       | `blakron create` | 项目模板：`game` \| `eui` \| `empty` |
+| `--template`       | `blakron create` | 项目模板：`game` \| `empty` |
 
 ---
 
@@ -197,14 +197,14 @@ my-project/
 ├── tsconfig.json
 ├── bin-debug/               # blakron build 自动生成
 ├── resource/                # 资源文件（可选）
-│   └── default.thm.json     # EUI 主题（仅 EUI 项目）
+│   └── default.res.json     # 资源配置
 └── src/
     └── Main.ts
 ```
 
 ### 建议的迁移流程
 
-1. **创建新项目**：`blakron create my-project --template game`（或 `eui`）
+1. **创建新项目**：`blakron create my-project`
 2. **迁移源码**：将旧 `src/` 下的代码复制到新项目
 3. **迁移配置**：将 `egretProperties.json` 和 `index.html` 中的配置转为 `blakron.config.ts`
 4. **迁移 EXML**：将皮肤文件放到 `resource/skins/`，主题 JSON 放到 `resource/`
