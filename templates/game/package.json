@@ -8,7 +8,7 @@
 		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@blakron/core": "^0.5.17",
+		"@blakron/core": "^0.5.18",
 		"@blakron/game": "^0.2.5",
 		"@blakron/ui": "^0.3.6"
 	},

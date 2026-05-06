@@ -35,7 +35,7 @@ function generateIndexHtml(config: ProjectConfig, entryScript: string): string {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <title>Blakron Game</title>
-    <style>html,body{margin:0;padding:0;background:${stage.background};overflow:hidden;}</style>
+    <style>html,body{margin:0;padding:0;width:100%;height:100%;background:${stage.background};overflow:hidden;}canvas{display:block;}</style>
 </head>
 <body>
     <canvas id="gameCanvas"
