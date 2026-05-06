@@ -23,7 +23,7 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
  */
 export async function applyTarget(config: ProjectConfig, entryScript?: string): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
-	const script = entryScript ?? config.entry.replace(/\.ts$/, '.js');
+	const script = entryScript ?? path.basename(config.entry).replace(/\.ts$/, '.js');
 	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config, script));
 }
 

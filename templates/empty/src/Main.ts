@@ -11,10 +11,10 @@ import { createPlayer, Sprite, Event } from '@blakron/core';
 class Main extends Sprite {
 	public constructor() {
 		super();
-		this.addEventListener(Event.ADDED_TO_STAGE, this.onAddToStage, this);
+		this.addEventListener(Event.ADDED_TO_STAGE, this.onAdded, this);
 	}
 
-	private onAddToStage(_event: Event): void {
+	private onAdded(_event: Event): void {
 		// 在这里编写你的游戏逻辑
 		console.log('Blakron game started');
 	}

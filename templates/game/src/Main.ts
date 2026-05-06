@@ -7,15 +7,16 @@
  * 生命周期：constructor → ADDED_TO_STAGE → onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
 import { createPlayer, Sprite, TextField, Shape, Event, Stage, resource } from '@blakron/core';
-import { Tween, Ease } from '@blakron/game';
+import { Tween } from '@blakron/game';
+import { LoadingUI } from './LoadingUI';
 
 class Main extends Sprite {
 	public constructor() {
 		super();
-		this.addEventListener(Event.ADDED_TO_STAGE, this.onAddToStage, this);
+		this.addEventListener(Event.ADDED_TO_STAGE, this.onAdded, this);
 	}
 
-	private onAddToStage(_event: Event): void {
+	private onAdded(_event: Event): void {
 		const stage = this.stage;
 		if (!stage) return;
 

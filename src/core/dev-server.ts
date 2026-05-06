@@ -39,11 +39,11 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 		}
 	}
 
-	// ── esbuild context: transpile-only, watch mode ───────────────────────────
+	// ── esbuild context: bundle + watch mode ──────────────────────────────────
 	const ctx = await esbuild.context({
-		entryPoints: ['src/**/*.ts'],
+		entryPoints: [config.entry],
 		outdir: outDir,
-		bundle: false,
+		bundle: true,
 		sourcemap: options.sourcemap,
 		target: 'es2022',
 		format: 'esm',
