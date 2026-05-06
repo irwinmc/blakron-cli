@@ -6,7 +6,7 @@
  *
  * 生命周期：constructor → ADDED_TO_STAGE → onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
-import { createPlayer, Sprite, TextField, Shape, Bitmap, Texture, Event, HttpRequest } from '@blakron/core';
+import { createPlayer, Sprite, TextField, Shape, Event, Stage, resource } from '@blakron/core';
 import { Tween, Ease } from '@blakron/game';
 
 class Main extends Sprite {
@@ -16,22 +16,36 @@ class Main extends Sprite {
 	}
 
 	private onAddToStage(_event: Event): void {
-		this.runGame().catch(e => {
+		const stage = this.stage;
+		if (!stage) return;
+
+		this.runGame(stage).catch(e => {
 			console.log(e);
 		});
 	}
 
-	private async runGame(): Promise<void> {
-		await this.loadResource();
-		this.createGameScene();
+	private async runGame(stage: Stage): Promise<void> {
+		await this.loadResource(stage);
+		this.createGameScene(stage);
 		this.startAnimation();
 	}
 
-	private async loadResource(): Promise<void> {
+	private async loadResource(stage: Stage): Promise<void> {
 		const loadingView = new LoadingUI();
-		this.stage!.addChild(loadingView);
-		// TODO: integrate with @blakron/core Resource when available
-		this.stage!.removeChild(loadingView);
+		stage.addChild(loadingView);
+
+		try {
+			await resource.loadConfig('resource/default.res.json', 'resource/');
+			if (resource.hasGroup('preload')) {
+				await resource.loadGroup('preload', 0, (loaded, total) => {
+					loadingView.onProgress(loaded, total);
+				});
+			}
+		} catch {
+			// 资源配置文件不存在时静默跳过（纯代码项目无需资源配置）
+		}
+
+		stage.removeChild(loadingView);
 	}
 
 	private textfield!: TextField;
@@ -41,9 +55,9 @@ class Main extends Sprite {
 	 *
 	 * 使用 Shape（矢量绘制）和 TextField（文本）等基础显示对象搭建画面。
 	 */
-	private createGameScene(): void {
-		const stageW = this.stage!.stageWidth;
-		const stageH = this.stage!.stageHeight;
+	private createGameScene(stage: Stage): void {
+		const stageW = stage.stageWidth;
+		const stageH = stage.stageHeight;
 
 		// 背景色块
 		const sky = new Shape();

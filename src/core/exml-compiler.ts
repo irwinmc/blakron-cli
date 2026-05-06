@@ -17,22 +17,22 @@ export interface ThemeData {
 }
 
 /**
- * Collects all .exml files under the project src directory.
+ * Collects all .exml files under the project resource directory.
  */
 export async function collectExmlFiles(projectDir: string): Promise<ExmlFile[]> {
 	const results: ExmlFile[] = [];
-	const srcDir = path.join(projectDir, 'src');
-	await walkDir(srcDir, results);
+	const resourceDir = path.join(projectDir, 'resource');
+	await walkDir(resourceDir, results);
 	return results.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 /**
- * Converts an absolute file path to a path relative to the project's src/ directory.
- * e.g. "/proj/src/skins/ButtonSkin.exml" → "skins/ButtonSkin.exml"
+ * Converts an absolute file path to a path relative to the project's resource/ directory.
+ * e.g. "/proj/resource/skins/ButtonSkin.exml" → "skins/ButtonSkin.exml"
  */
-export function toSrcRelative(absolutePath: string): string {
-	const srcDir = path.join(process.cwd(), 'src');
-	return path.relative(srcDir, absolutePath).split(path.sep).join('/');
+export function toResourceRelative(absolutePath: string): string {
+	const resourceDir = path.join(process.cwd(), 'resource');
+	return path.relative(resourceDir, absolutePath).split(path.sep).join('/');
 }
 
 async function walkDir(dir: string, results: ExmlFile[]): Promise<void> {
@@ -102,15 +102,15 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 	const outThemePath = path.join(outDir, themeData.path);
 
 	if (policy === 'path') {
-		themeData.exmls = exmls.map(e => toSrcRelative(e.filename));
+		themeData.exmls = exmls.map(e => toResourceRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
 	} else if (policy === 'content') {
-		const exmlsWithContent = exmls.map(e => ({ path: toSrcRelative(e.filename), content: e.contents }));
+		const exmlsWithContent = exmls.map(e => ({ path: toResourceRelative(e.filename), content: e.contents }));
 		await writeFile(outThemePath, JSON.stringify({ ...themeData, exmls: exmlsWithContent }, null, '\t'));
 	} else if (policy === 'gjs') {
 		const gjsItems = exmls.map(e => {
 			const { code, className } = exmlToGjs(e);
-			return { relPath: toSrcRelative(e.filename), gjs: code, className };
+			return { relPath: toResourceRelative(e.filename), gjs: code, className };
 		});
 
 		// Generate individual .js files for each skin
@@ -126,7 +126,7 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 		await ensureDir(path.dirname(thmJsPath));
 		await writeFile(thmJsPath, content);
 	} else if (policy === 'json') {
-		themeData.exmls = exmls.map(e => toSrcRelative(e.filename));
+		themeData.exmls = exmls.map(e => toResourceRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
 	}
 }

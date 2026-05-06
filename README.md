@@ -38,7 +38,7 @@ blakron create <项目名> [选项]
 | ------- | -------------- | ---------------------------------------------------------------------- |
 | `empty` | `Main extends Sprite`    | constructor → `ADDED_TO_STAGE` → `onAddToStage`             |
 | `game`  | `Main extends Sprite`    | constructor → `ADDED_TO_STAGE` → `onAddToStage` → `runGame` → `createGameScene` |
-| `eui`   | `Main extends UILayer`   | `createChildren` → 初始化 Theme → `runGame` → `createGameScene` |
+| `eui`   | `Main extends UILayer`   | `createChildren` → 初始化 Theme → `runGame` → `loadResource` → `createGameScene` → `startAnimation` |
 
 ### `blakron build`
 
@@ -57,7 +57,7 @@ blakron build [选项]
 
 ### `blakron dev`
 
-启动开发服务器，支持热重载。
+启动开发服务器，文件变更自动重编译（浏览器需手动刷新）。
 
 ```bash
 blakron dev [选项]
@@ -181,15 +181,15 @@ my-app/
 ├── package.json
 ├── tsconfig.json
 ├── resource/
-│   └── default.thm.json       # 主题文件：组件名 → 皮肤名映射
+│   ├── default.thm.json       # 主题文件：组件名 → 皮肤名映射
+│   └── skins/                 # EXML 皮肤目录
+│       ├── ButtonSkin.exml
+│       ├── CheckBoxSkin.exml
+│       ├── ComboBoxSkin.exml
+│       ├── ...（共 21 个）
+│       └── ViewStackSkin.exml
 └── src/
-    ├── Main.ts                # 入口：class Main extends UILayer
-    └── skins/                 # EXML 皮肤目录
-        ├── ButtonSkin.exml
-        ├── CheckBoxSkin.exml
-        ├── ComboBoxSkin.exml
-        ├── ...（共 21 个）
-        └── ViewStackSkin.exml
+    └── Main.ts                # 入口：class Main extends UILayer
 ```
 
 ## 快速开始
