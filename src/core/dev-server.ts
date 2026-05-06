@@ -1,9 +1,11 @@
 import * as esbuild from 'esbuild';
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { ensureDir } from '../utils/fs.js';
 import { applyTarget, copyProjectAssets } from './template.js';
+import { compileExml } from './exml-compiler.js';
 import type { ProjectConfig } from './config.js';
 import { logger } from '../utils/logger.js';
 
@@ -13,16 +15,11 @@ export interface DevServerOptions {
 }
 
 /**
- * Starts a development server with file watching and live reload.
+ * Starts a development server with file watching.
  *
- * Architecture:
- * - esbuild `context.watch()` recompiles on file changes
- * - esbuild `context.serve()` serves compiled JS from memory
- * - A thin Node.js HTTP proxy sits in front, serving static files
- *   (index.html, resource/) and forwarding JS requests to esbuild
- * - Live reload is delivered via Server-Sent Events (SSE): esbuild's
- *   built-in `/esbuild` SSE endpoint is proxied through to the browser,
- *   and a small inline script in index.html subscribes to it
+ * - esbuild watches .ts files → auto recompile
+ * - fs.watch monitors .exml files → auto recompile
+ * - Browser does NOT auto-refresh — you control when to reload manually
  */
 export async function startDevServer(config: ProjectConfig, options: DevServerOptions): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
@@ -31,6 +28,16 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 	// ── Generate static files (index.html, resource/) ────────────────────────
 	await applyTarget(config);
 	await copyProjectAssets(config);
+
+	// ── Initial EXML compilation ─────────────────────────────────────────────
+	if (config.exml) {
+		try {
+			await compileExml(config);
+			logger.info('EXML skins compiled');
+		} catch (err) {
+			logger.warn(`EXML compilation failed: ${err instanceof Error ? err.message : err}`);
+		}
+	}
 
 	// ── esbuild context: transpile-only, watch mode ───────────────────────────
 	const ctx = await esbuild.context({
@@ -48,23 +55,49 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 		logLevel: 'warning',
 	});
 
-	// Start watching — esbuild rebuilds on every file change.
+	// Start watching — esbuild rebuilds on every TS file change.
 	await ctx.watch();
 
-	// esbuild's built-in serve provides an in-memory file server for compiled
-	// JS and exposes a /esbuild SSE endpoint for live reload notifications.
-	const esbuildServer = await ctx.serve({ port: 0 }); // port 0 = OS-assigned
+	// esbuild serve provides an in-memory file server for compiled JS.
+	const esbuildServer = await ctx.serve({ port: 0 });
 	const esbuildHost = esbuildServer.hosts[0] ?? '127.0.0.1';
 
-	// ── Proxy HTTP server ─────────────────────────────────────────────────────
+	// ── EXML file watcher ─────────────────────────────────────────────────────
+	let exmlWatcher: fsSync.FSWatcher | undefined;
+	if (config.exml) {
+		const srcDir = path.resolve('src');
+		let exmlDebounce: ReturnType<typeof setTimeout> | undefined;
+
+		try {
+			exmlWatcher = fsSync.watch(
+				srcDir,
+				{ recursive: true },
+				async (_eventType: string, filename: string | null) => {
+					if (!filename || !filename.endsWith('.exml')) return;
+
+					// Debounce: batch rapid changes (e.g. IDE save multiple files)
+					if (exmlDebounce) clearTimeout(exmlDebounce);
+					exmlDebounce = setTimeout(async () => {
+						const shortName = filename.split(/[/\\]/).pop() ?? filename;
+						logger.info(`EXML changed: ${shortName}, recompiling...`);
+						try {
+							await compileExml(config);
+							logger.success('EXML skins recompiled');
+						} catch (err) {
+							logger.warn(`EXML recompile failed: ${err instanceof Error ? err.message : err}`);
+						}
+					}, 100);
+				},
+			);
+		} catch {
+			// fs.watch recursive may not be supported on all platforms
+			logger.warn('EXML watcher not available (recursive fs.watch unsupported)');
+		}
+	}
+
+	// ── HTTP server ───────────────────────────────────────────────────────────
 	const server = http.createServer(async (req, res) => {
 		const url = req.url ?? '/';
-
-		// Forward /esbuild SSE endpoint (live reload) to esbuild's server.
-		if (url === '/esbuild') {
-			proxyRequest(req, res, esbuildHost, esbuildServer.port);
-			return;
-		}
 
 		// Forward compiled JS files to esbuild's in-memory server.
 		if (url.endsWith('.js') || url.endsWith('.js.map')) {
@@ -73,26 +106,12 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 		}
 
 		// Serve static files from the output directory.
-		let filePath = path.join(outDir, url === '/' ? 'index.html' : url);
+		const filePath = path.join(outDir, url === '/' ? 'index.html' : url);
 
-		// Inject live-reload script into index.html responses.
-		if (filePath.endsWith('index.html')) {
-			try {
-				let html = await fs.readFile(filePath, 'utf-8');
-				html = injectLiveReload(html);
-				res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-				res.end(html);
-			} catch {
-				res.writeHead(404);
-				res.end('Not found');
-			}
-			return;
-		}
-
-		// Serve other static files (images, audio, resource/, etc.)
 		try {
 			const data = await fs.readFile(filePath);
-			res.writeHead(200, { 'Content-Type': getMimeType(filePath) });
+			const contentType = filePath.endsWith('.html') ? 'text/html; charset=utf-8' : getMimeType(filePath);
+			res.writeHead(200, { 'Content-Type': contentType });
 			res.end(data);
 		} catch {
 			res.writeHead(404);
@@ -103,18 +122,22 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 	server.listen(options.port, () => {
 		logger.success(`Dev server running at http://localhost:${options.port}`);
 		logger.info('Watching for file changes...');
+		if (config.exml) {
+			logger.info('Watching EXML skins for changes');
+		}
 	});
 
 	// Graceful shutdown on Ctrl+C.
 	process.on('SIGINT', async () => {
 		logger.info('Stopping dev server...');
+		exmlWatcher?.close();
 		await ctx.dispose();
 		server.close();
 		process.exit(0);
 	});
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Proxies an incoming request to esbuild's internal serve port. */
 function proxyRequest(req: http.IncomingMessage, res: http.ServerResponse, host: string, port: number): void {
@@ -134,17 +157,6 @@ function proxyRequest(req: http.IncomingMessage, res: http.ServerResponse, host:
 		res.end('Bad gateway');
 	});
 	req.pipe(proxy, { end: true });
-}
-
-/**
- * Injects a small SSE-based live reload script before </body>.
- * Subscribes to esbuild's /esbuild endpoint and reloads on rebuild.
- */
-function injectLiveReload(html: string): string {
-	const script = `<script>
-new EventSource('/esbuild').addEventListener('change', () => location.reload());
-</script>`;
-	return html.includes('</body>') ? html.replace('</body>', `${script}\n</body>`) : html + script;
 }
 
 /** Returns a basic MIME type for common file extensions. */
