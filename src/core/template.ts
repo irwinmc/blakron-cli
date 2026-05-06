@@ -21,12 +21,13 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 /**
  * Generates the platform entry file (index.html).
  */
-export async function applyTarget(config: ProjectConfig): Promise<void> {
+export async function applyTarget(config: ProjectConfig, entryScript?: string): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
-	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config));
+	const script = entryScript ?? config.entry.replace(/\.ts$/, '.js');
+	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config, script));
 }
 
-function generateIndexHtml(config: ProjectConfig): string {
+function generateIndexHtml(config: ProjectConfig, entryScript: string): string {
 	const { stage } = config;
 	return `<!DOCTYPE html>
 <html>
@@ -45,7 +46,7 @@ function generateIndexHtml(config: ProjectConfig): string {
         data-content-width="${stage.width}"
         data-content-height="${stage.height}"
     ></canvas>
-    <script type="module" src="Main.js"></script>
+    <script type="module" src="${entryScript}"></script>
 </body>
 </html>`;
 }

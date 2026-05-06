@@ -12,7 +12,7 @@
 | `create` 命令      | ✅ 完成 | game / empty 模板可用，eui 模板等 @blakron/eui    |
 | `clean` 命令       | ✅ 完成 |                                                   |
 | `dev` 命令         | ✅ 完成 | esbuild watch + SSE live reload，默认端口 3000    |
-| `config.ts`        | ✅ 完成 | defineConfig + loadConfig，完整类型               |
+| `config.ts`        | ✅ 完成 | loadConfig，完整默认值               |
 | `compiler.ts`      | ✅ 完成 | esbuild 封装，双模式                              |
 | `dev-server.ts`    | ✅ 完成 | esbuild context + Node.js HTTP 代理               |
 | `template.ts`      | ✅ 完成 | index.html 生成，资源复制                         |

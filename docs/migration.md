@@ -31,7 +31,6 @@
 ### 配置
 
 - `blakron.config.ts` 替代 `egretProperties.json` + `index.html data-*`
-- `defineConfig()` 提供类型安全的配置定义
 - 完整默认值，所有字段可选
 
 ### 编译

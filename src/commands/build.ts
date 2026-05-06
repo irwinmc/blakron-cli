@@ -38,13 +38,15 @@ export const buildCommand = new Command('build')
 				analyze: options.analyze,
 			});
 
+			// index.html + assets are needed in ALL modes (including watch)
+			logger.info('Applying target template...');
+			const entryScript = options.minify ? 'main.js' : undefined;
+			await applyTarget(config, entryScript);
+
+			logger.info('Copying assets...');
+			await copyProjectAssets(config);
+
 			if (!options.watch) {
-				logger.info('Applying target template...');
-				await applyTarget(config);
-
-				logger.info('Copying assets...');
-				await copyProjectAssets(config);
-
 				const elapsed = ((Date.now() - start) / 1000).toFixed(2);
 				logger.success(`Build completed in ${elapsed}s → ${config.output.dir}/`);
 			}

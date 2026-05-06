@@ -11,6 +11,8 @@ export interface ComponentInfo {
 	module: string;
 	/** The default property name — direct children are assigned here */
 	defaultProperty?: string;
+	/** Whether defaultProperty accepts an Array (vs single value) */
+	isArray?: boolean;
 }
 
 // ── Namespace mappings ───────────────────────────────────────────────
@@ -31,11 +33,11 @@ const NAMESPACE_MODULES: Record<string, string> = {
  */
 const COMPONENTS: Record<string, ComponentInfo> = {
 	// Skins & containers
-	Skin: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	Group: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	Panel: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	DataGroup: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	Scroller: { module: '@blakron/ui', defaultProperty: 'viewport' },
+	Skin: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
+	Group: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
+	Panel: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
+	DataGroup: { module: '@blakron/ui', defaultProperty: 'dataProvider', isArray: false },
+	Scroller: { module: '@blakron/ui', defaultProperty: 'viewport', isArray: false },
 
 	// Basic controls
 	Button: { module: '@blakron/ui' },
@@ -52,10 +54,10 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 	HScrollBar: { module: '@blakron/ui' },
 	VScrollBar: { module: '@blakron/ui' },
 	TabBar: { module: '@blakron/ui' },
-	List: { module: '@blakron/ui', defaultProperty: 'dataProvider' },
-	ItemRenderer: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	ViewStack: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
-	UILayer: { module: '@blakron/ui', defaultProperty: 'elementsContent' },
+	List: { module: '@blakron/ui', defaultProperty: 'dataProvider', isArray: false },
+	ItemRenderer: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
+	ViewStack: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
+	UILayer: { module: '@blakron/ui', defaultProperty: 'elementsContent', isArray: true },
 
 	// Text input controls
 	TextInput: { module: '@blakron/ui' },
@@ -75,7 +77,7 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 	SetStateProperty: { module: '@blakron/ui' },
 
 	// Collections
-	ArrayCollection: { module: '@blakron/ui' },
+	ArrayCollection: { module: '@blakron/ui', defaultProperty: 'source', isArray: true },
 
 	// Binding
 	Binding: { module: '@blakron/ui' },
@@ -95,7 +97,7 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 	Timer: { module: '@blakron/core' },
 
 	// Complex controls
-	ComboBox: { module: '@blakron/ui', defaultProperty: 'dataProvider' },
+	ComboBox: { module: '@blakron/ui', defaultProperty: 'dataProvider', isArray: false },
 
 	// Animation
 	Animation: { module: '@blakron/ui' },

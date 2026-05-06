@@ -8,10 +8,10 @@
 		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@blakron/core": "^0.3.3",
-		"@blakron/ui": "^0.2.0"
+		"@blakron/core": "^0.5.17",
+		"@blakron/ui": "^0.3.5"
 	},
 	"devDependencies": {
-		"@blakron/cli": "^0.1.1"
+		"@blakron/cli": "^0.2.0"
 	}
 }

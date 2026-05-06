@@ -19,6 +19,7 @@ import type {
 	PercentValue,
 	BindingValue,
 } from './ast.js';
+import { getDefaultProperty, lookupComponent } from './registry.js';
 
 // ── Public API ───────────────────────────────────────────────────────
 
@@ -163,8 +164,16 @@ class CodeGen {
 			// Assign children to default property
 			const defaultPropChildren = node.children.filter(c => c.includeIn.length === 0);
 			if (defaultPropChildren.length > 0) {
+				const info = lookupComponent(node.className);
+				const defaultProp = info?.defaultProperty ?? 'elementsContent';
+				const isArray = info?.isArray !== false;
 				const childVars = defaultPropChildren.map(c => c.varName).join(', ');
-				this.line(`${node.varName}.elementsContent = [${childVars}];`);
+				if (isArray) {
+					this.line(`${node.varName}.${defaultProp} = [${childVars}];`);
+				} else {
+					// Single-value property: assign first child directly
+					this.line(`${node.varName}.${defaultProp} = ${defaultPropChildren[0].varName};`);
+				}
 			}
 		}
 	}

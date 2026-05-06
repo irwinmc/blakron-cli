@@ -24,7 +24,7 @@
 packages/cli/
 ├── src/
 │   ├── index.ts              # 入口（commander.js 注册命令）
-│   ├── define.ts             # 对外导出 defineConfig + 类型
+│   ├── define.ts             # 对外导出配置类型
 │   ├── commands/
 │   │   ├── build.ts          # blakron build
 │   │   ├── create.ts         # blakron create <name>
@@ -106,9 +106,7 @@ blakron create <name> [options]
 `blakron.config.ts` 替代旧的 `egretProperties.json` + `index.html data-*`：
 
 ```typescript
-import { defineConfig } from '@blakron/cli';
-
-export default defineConfig({
+export default {
 	target: 'html5',
 	entry: 'src/Main.ts',
 	output: { dir: 'bin-debug' },
@@ -125,7 +123,7 @@ export default defineConfig({
 		publishPolicy: 'gjs', // path | content | gjs | json
 		themeFile: 'resource/default.thm.json',
 	},
-});
+};
 ```
 
 **默认值**（所有字段均可省略）：

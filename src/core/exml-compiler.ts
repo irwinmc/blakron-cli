@@ -21,8 +21,18 @@ export interface ThemeData {
  */
 export async function collectExmlFiles(projectDir: string): Promise<ExmlFile[]> {
 	const results: ExmlFile[] = [];
-	await walkDir(path.join(projectDir, 'src'), results);
+	const srcDir = path.join(projectDir, 'src');
+	await walkDir(srcDir, results);
 	return results.sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
+/**
+ * Converts an absolute file path to a path relative to the project's src/ directory.
+ * e.g. "/proj/src/skins/ButtonSkin.exml" → "skins/ButtonSkin.exml"
+ */
+export function toSrcRelative(absolutePath: string): string {
+	const srcDir = path.join(process.cwd(), 'src');
+	return path.relative(srcDir, absolutePath).split(path.sep).join('/');
 }
 
 async function walkDir(dir: string, results: ExmlFile[]): Promise<void> {
@@ -92,48 +102,57 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 	const outThemePath = path.join(outDir, themeData.path);
 
 	if (policy === 'path') {
-		themeData.exmls = exmls.map(e => e.filename);
+		themeData.exmls = exmls.map(e => toSrcRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
 	} else if (policy === 'content') {
-		const exmlsWithContent = exmls.map(e => ({ path: e.filename, content: e.contents }));
+		const exmlsWithContent = exmls.map(e => ({ path: toSrcRelative(e.filename), content: e.contents }));
 		await writeFile(outThemePath, JSON.stringify({ ...themeData, exmls: exmlsWithContent }, null, '\t'));
 	} else if (policy === 'gjs') {
 		const gjsItems = exmls.map(e => {
 			const { code, className } = exmlToGjs(e);
-			return { path: e.filename, gjs: code, className };
+			return { relPath: toSrcRelative(e.filename), gjs: code, className };
 		});
 
 		// Generate individual .js files for each skin
 		for (const item of gjsItems) {
-			const outPath = path.join(outDir, item.path.replace(/\.exml$/, '.gjs.js'));
+			const outPath = path.join(outDir, item.relPath.replace(/\.exml$/, '.gjs.js'));
 			await ensureDir(path.dirname(outPath));
 			await writeFile(outPath, item.gjs);
 		}
 
 		// Also generate the thm.js registry file
 		const thmJsPath = outThemePath.replace('thm.json', 'thm.js');
-		const content = buildGjsThemeJs(themeData, gjsItems);
+		const content = buildGjsThemeJs(themeData, gjsItems, outDir, thmJsPath);
 		await ensureDir(path.dirname(thmJsPath));
 		await writeFile(thmJsPath, content);
 	} else if (policy === 'json') {
-		themeData.exmls = exmls.map(e => e.filename);
+		themeData.exmls = exmls.map(e => toSrcRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
 	}
 }
 
-function buildGjsThemeJs(theme: ThemeData, items: { path: string; gjs: string; className: string }[]): string {
-	// Generate ESM imports from the individual .gjs.js files
+function buildGjsThemeJs(
+	theme: ThemeData,
+	items: { relPath: string; gjs: string; className: string }[],
+	outDir: string,
+	thmJsPath: string,
+): string {
+	const thmJsDir = path.dirname(thmJsPath);
+
+	// Generate ESM imports with relative paths from thm.js to each .gjs.js file
 	const imports = items
-		.map((item, i) => {
+		.map(item => {
 			const funcName = item.className.split('.').pop()!;
-			return `import { create${funcName} } from "./${item.path.replace(/\.exml$/, '.gjs.js')}";`;
+			const gjsPath = path.join(outDir, item.relPath.replace(/\.exml$/, '.gjs.js'));
+			const relImport = path.relative(thmJsDir, gjsPath).split(path.sep).join('/');
+			return `import { create${funcName} } from "./${relImport}";`;
 		})
 		.join('\n');
 
 	const skinMap = items
 		.map(item => {
 			const funcName = item.className.split('.').pop()!;
-			return `  "${item.path}": create${funcName},`;
+			return `  "${item.relPath}": create${funcName},`;
 		})
 		.join('\n');
 

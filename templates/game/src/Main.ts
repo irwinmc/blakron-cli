@@ -1,12 +1,13 @@
 /**
  * Blakron 标准游戏模板
  *
- * 使用 @blakron/core 进行纯 Canvas 绘制，不含 EUI 皮肤系统。
+ * 使用 @blakron/core 进行 Canvas 绘制 + @blakron/game 补间动画。
  * 通过 Shape、TextField 等基础显示对象构建游戏场景。
  *
- * 生命周期：constructor → ADDED_TO_STAGE → onAddToStage → runGame → createGameScene
+ * 生命周期：constructor → ADDED_TO_STAGE → onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
-import { createPlayer, Sprite, TextField, Shape, Event } from '@blakron/core';
+import { createPlayer, Sprite, TextField, Shape, Bitmap, Texture, Event, HttpRequest } from '@blakron/core';
+import { Tween, Ease } from '@blakron/game';
 
 class Main extends Sprite {
 	public constructor() {
@@ -21,7 +22,16 @@ class Main extends Sprite {
 	}
 
 	private async runGame(): Promise<void> {
+		await this.loadResource();
 		this.createGameScene();
+		this.startAnimation();
+	}
+
+	private async loadResource(): Promise<void> {
+		const loadingView = new LoadingUI();
+		this.stage!.addChild(loadingView);
+		// TODO: integrate with @blakron/core Resource when available
+		this.stage!.removeChild(loadingView);
 	}
 
 	private textfield!: TextField;
@@ -30,11 +40,10 @@ class Main extends Sprite {
 	 * 创建游戏场景
 	 *
 	 * 使用 Shape（矢量绘制）和 TextField（文本）等基础显示对象搭建画面。
-	 * 如需资源加载，可在 runGame() 中调用加载逻辑后再执行此方法。
 	 */
 	private createGameScene(): void {
-		const stageW = 640;
-		const stageH = 1136;
+		const stageW = this.stage!.stageWidth;
+		const stageH = this.stage!.stageHeight;
 
 		// 背景色块
 		const sky = new Shape();
@@ -62,7 +71,7 @@ class Main extends Sprite {
 		colorLabel.y = 80;
 		this.addChild(colorLabel);
 
-		// 描述文本（可用于后续动画等）
+		// 描述文本（用于动画）
 		const textfield = new TextField();
 		this.addChild(textfield);
 		textfield.alpha = 0;
@@ -73,6 +82,27 @@ class Main extends Sprite {
 		textfield.x = 0;
 		textfield.y = 135;
 		this.textfield = textfield;
+	}
+
+	/**
+	 * 播放文本淡入淡出动画
+	 */
+	private startAnimation(): void {
+		const texts = ['Open-source, Free, Multi-platform', 'Push Game Forward', 'HTML5 Game Engine'];
+		let count = -1;
+		const change = () => {
+			count++;
+			if (count >= texts.length) {
+				count = 0;
+			}
+			this.textfield.text = texts[count];
+			const tw = Tween.get(this.textfield);
+			tw.to({ alpha: 1 }, 200);
+			tw.wait(2000);
+			tw.to({ alpha: 0 }, 200);
+			tw.call(change, this);
+		};
+		change();
 	}
 }
 

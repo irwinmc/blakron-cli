@@ -31,11 +31,6 @@ export interface ProjectConfig {
 	exml?: ExmlConfig;
 }
 
-/** Defines a typed project config — used in blakron.config.ts */
-export function defineConfig(config: ProjectConfig): ProjectConfig {
-	return config;
-}
-
 const DEFAULTS: ProjectConfig = {
 	target: 'html5',
 	entry: 'src/Main.ts',

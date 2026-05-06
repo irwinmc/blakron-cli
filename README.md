@@ -81,9 +81,7 @@ blakron clean
 在项目根目录创建 `blakron.config.ts`：
 
 ```ts
-import { defineConfig } from '@blakron/cli';
-
-export default defineConfig({
+export default {
 	target: 'html5',
 	entry: 'src/Main.ts',
 	output: { dir: 'bin-debug' },
@@ -100,7 +98,7 @@ export default defineConfig({
 		publishPolicy: 'gjs',                     // path | content | gjs | json
 		themeFile: 'resource/default.thm.json',
 	},
-});
+};
 ```
 
 **配置选项：**
