@@ -13,7 +13,7 @@ import { LoadingUI } from './LoadingUI';
 class Main extends Sprite {
 	public constructor() {
 		super();
-		this.addEventListener(Event.ADDED_TO_STAGE, this.onAdded, this);
+		this.addEventListener(Event.ADDED_TO_STAGE, this.onAdded);
 	}
 
 	private onAdded(_event: Event): void {

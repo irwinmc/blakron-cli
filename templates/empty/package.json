@@ -11,6 +11,6 @@
 		"@blakron/core": "^0.5.18"
 	},
 	"devDependencies": {
-		"@blakron/cli": "^0.3.1"
+		"@blakron/cli": "^0.3.3"
 	}
 }
