@@ -12,7 +12,7 @@ export interface ExmlFile {
 export interface ThemeData {
 	path: string;
 	skins: Record<string, string>;
-	exmls: string[];
+	exmls: (string | { path: string; gjs?: string; className?: string; content?: string })[];
 	autoGenerateExmlsList?: boolean;
 }
 
@@ -65,13 +65,13 @@ function exmlToGjs(exmlFile: ExmlFile): { code: string; className: string } {
 	const className = classMatch ? classMatch[1] : path.basename(exmlFile.filename, '.exml');
 
 	try {
-		const code = compileEXML(exmlFile.contents, className);
+		const code = compileEXML(exmlFile.contents, className, { format: 'iife' });
 		return { code, className };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		console.error(`[exml] Error compiling ${exmlFile.filename}: ${message}`);
 		// Return a stub so the build doesn't break
-		const code = `// Error compiling ${path.basename(exmlFile.filename)}: ${message}\nexport function createSkin() { return {}; }\n`;
+		const code = `// Error compiling ${path.basename(exmlFile.filename)}: ${message}\nfunction createSkin() { return {}; }\n`;
 		return { code, className };
 	}
 }
@@ -120,11 +120,13 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 			await writeFile(outPath, item.gjs);
 		}
 
-		// Also generate the thm.js registry file
-		const thmJsPath = outThemePath.replace('thm.json', 'thm.js');
-		const content = buildGjsThemeJs(themeData, gjsItems, outDir, thmJsPath);
-		await ensureDir(path.dirname(thmJsPath));
-		await writeFile(thmJsPath, content);
+		// Populate exmls in theme JSON so Theme can load skin code at runtime
+		themeData.exmls = gjsItems.map(item => ({
+			path: item.relPath,
+			gjs: item.gjs,
+			className: item.className,
+		}));
+		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
 	} else if (policy === 'json') {
 		themeData.exmls = exmls.map(e => toResourceRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));

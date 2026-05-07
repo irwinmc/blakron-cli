@@ -23,14 +23,25 @@ import { getDefaultProperty, lookupComponent } from './registry.js';
 
 // ── Public API ───────────────────────────────────────────────────────
 
+export interface CodeGenOptions {
+	/**
+	 * Output format:
+	 * - 'esm' (default): generates import/export statements for use as ES modules
+	 * - 'iife': generates code that reads dependencies from a `__deps` local variable,
+	 *   suitable for evaluation via `new Function('__deps', code)` at runtime
+	 */
+	format?: 'esm' | 'iife';
+}
+
 /**
  * Generate JavaScript source code from a SkinIR.
  *
  * @param ir The skin intermediate representation
+ * @param options Code generation options
  * @returns Generated JS source string
  */
-export function generateCode(ir: SkinIR): string {
-	const gen = new CodeGen(ir);
+export function generateCode(ir: SkinIR, options?: CodeGenOptions): string {
+	const gen = new CodeGen(ir, options?.format ?? 'esm');
 	return gen.generate();
 }
 
@@ -39,10 +50,12 @@ export function generateCode(ir: SkinIR): string {
 class CodeGen {
 	private readonly ir: SkinIR;
 	private readonly lines: string[] = [];
+	private readonly format: 'esm' | 'iife';
 	private indent = 0;
 
-	constructor(ir: SkinIR) {
+	constructor(ir: SkinIR, format: 'esm' | 'iife') {
 		this.ir = ir;
+		this.format = format;
 	}
 
 	generate(): string {
@@ -96,9 +109,21 @@ class CodeGen {
 			}
 		}
 
-		for (const [modulePath, classes] of moduleImports) {
-			const names = [...classes].sort().join(', ');
-			this.line(`import { ${names} } from "${modulePath}";`);
+		if (this.format === 'esm') {
+			for (const [modulePath, classes] of moduleImports) {
+				const names = [...classes].sort().join(', ');
+				this.line(`import { ${names} } from "${modulePath}";`);
+			}
+		} else {
+			// iife mode: destructure all needed classes from the __deps parameter
+			const allClasses = new Set<string>();
+			for (const classes of moduleImports.values()) {
+				for (const c of classes) allClasses.add(c);
+			}
+			if (allClasses.size > 0) {
+				const names = [...allClasses].sort().join(', ');
+				this.line(`const { ${names} } = __deps;`);
+			}
 		}
 		this.line('');
 	}
@@ -107,7 +132,11 @@ class CodeGen {
 
 	private emitFunction(): void {
 		const funcName = this.factoryName(this.ir.className);
-		this.line(`export function ${funcName}() {`);
+		if (this.format === 'esm') {
+			this.line(`export function ${funcName}() {`);
+		} else {
+			this.line(`function ${funcName}() {`);
+		}
 		this.indent++;
 
 		// Create skin instance

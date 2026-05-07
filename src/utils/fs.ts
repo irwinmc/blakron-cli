@@ -5,7 +5,7 @@ export async function ensureDir(dir: string): Promise<void> {
 	await fs.mkdir(dir, { recursive: true });
 }
 
-export async function copyDir(src: string, dest: string): Promise<void> {
+export async function copyDir(src: string, dest: string, filter?: (name: string) => boolean): Promise<void> {
 	await ensureDir(dest);
 	const entries = await fs.readdir(src, { withFileTypes: true });
 	for (const entry of entries) {
@@ -14,7 +14,9 @@ export async function copyDir(src: string, dest: string): Promise<void> {
 		if (entry.isDirectory()) {
 			await copyDir(srcPath, destPath);
 		} else {
-			await fs.copyFile(srcPath, destPath);
+			if (!filter || filter(entry.name)) {
+				await fs.copyFile(srcPath, destPath);
+			}
 		}
 	}
 }

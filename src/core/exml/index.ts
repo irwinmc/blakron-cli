@@ -54,11 +54,13 @@ export { parseEXML, parseSkinRoot } from './exml-parser.js';
 
 // ── Code Generator ───────────────────────────────────────────────────
 export { generateCode } from './codegen.js';
+export type { CodeGenOptions } from './codegen.js';
 
 // ── Convenience: parse + generate in one step ────────────────────────
 
 import { parseEXML } from './exml-parser.js';
 import { generateCode } from './codegen.js';
+import type { CodeGenOptions } from './codegen.js';
 import type { SkinIR } from './ast.js';
 
 /**
@@ -66,11 +68,12 @@ import type { SkinIR } from './ast.js';
  *
  * @param source EXML source text
  * @param className Optional class name (used for factory function name)
+ * @param options Code generation options (format: 'esm' | 'iife')
  * @returns Generated JS source string
  */
-export function compileEXML(source: string, className?: string): string {
+export function compileEXML(source: string, className?: string, options?: CodeGenOptions): string {
 	const ir = parseEXML(source, className);
-	return generateCode(ir);
+	return generateCode(ir, options);
 }
 
 /**

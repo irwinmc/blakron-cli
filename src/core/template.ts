@@ -14,7 +14,7 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 	const resourceDir = path.resolve('resource');
 	const outResourceDir = path.join(path.resolve(config.output.dir), 'resource');
 	if (await exists(resourceDir)) {
-		await copyDir(resourceDir, outResourceDir);
+		await copyDir(resourceDir, outResourceDir, (name) => !name.endsWith(".thm.json"));
 	}
 }
 
