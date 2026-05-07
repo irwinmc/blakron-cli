@@ -6,17 +6,15 @@
  *
  * 生命周期：constructor → ADDED_TO_STAGE → $onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
-import { createPlayer, Sprite, TextField, Shape, Event, Stage, resource } from '@blakron/core';
+import { createPlayer, UILayer, TextField, Shape, Event, Stage, resource } from '@blakron/core';
+import { Button, Theme } from '@blakron/ui';
 import { Tween } from '@blakron/game';
 import { LoadingUI } from './LoadingUI';
 
-class Main extends Sprite {
-	public constructor() {
-		super();
-		this.addEventListener(Event.ADDED_TO_STAGE, this.onAddedToStage);
-	}
+class Main extends UILayer {
+	protected createChildren(): void {
+		super.createChildren();
 
-	private onAddedToStage(_event: Event): void {
 		const stage = this.stage;
 		if (!stage) return;
 
@@ -27,6 +25,7 @@ class Main extends Sprite {
 
 	private async runGame(stage: Stage): Promise<void> {
 		await this.loadResource(stage);
+		await this.loadTheme();
 		this.createGameScene(stage);
 		this.startAnimation();
 	}
@@ -47,6 +46,13 @@ class Main extends Sprite {
 		}
 
 		stage.removeChild(loadingView);
+	}
+
+	private async loadTheme(): Promise<void> {
+		// 加载默认主题（UI 组件默认皮肤）
+		// 加载主题（UI 组件默认皮肤映射）
+		const theme = new Theme('resource/default.thm.json');
+		await new Promise<void>(resolve => theme.addEventListener(Event.COMPLETE, () => resolve()));
 	}
 
 	private textfield!: TextField;
@@ -97,6 +103,14 @@ class Main extends Sprite {
 		textfield.x = 0;
 		textfield.y = 135;
 		this.textfield = textfield;
+
+		// UI 按钮示例（需要默认主题）
+		const button = new Button();
+		button.label = 'Click Me';
+		button.x = (stageW - 200) / 2;
+		button.y = 200;
+		button.width = 200;
+		this.addChild(button);
 	}
 
 	/**

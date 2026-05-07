@@ -10,9 +10,9 @@
 	"dependencies": {
 		"@blakron/core": "^0.6.0",
 		"@blakron/game": "^0.3.0",
-		"@blakron/ui": "^0.4.2"
+		"@blakron/ui": "^0.4.4"
 	},
 	"devDependencies": {
-		"@blakron/cli": "^0.3.6"
+		"@blakron/cli": "^0.3.8"
 	}
 }
