@@ -66,12 +66,12 @@ export async function compile(config: ProjectConfig, options: CompileOptions): P
 			}
 		}
 	} else {
-		// Dev mode: transpile-only, preserve file structure
+		// Dev mode: bundle without minification for browser compatibility
 		const buildOptions: esbuild.BuildOptions = {
 			...commonOptions,
-			entryPoints: ['src/**/*.ts'],
-			outdir: outDir,
-			bundle: false,
+			entryPoints: [path.resolve(config.entry)],
+			outfile: path.join(outDir, 'main.js'),
+			bundle: true,
 			minify: false,
 		};
 

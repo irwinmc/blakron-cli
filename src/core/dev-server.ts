@@ -65,12 +65,12 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 	// ── EXML file watcher ─────────────────────────────────────────────────────
 	let exmlWatcher: fsSync.FSWatcher | undefined;
 	if (config.exml) {
-		const srcDir = path.resolve('src');
+		const resourceDir = path.resolve('resource');
 		let exmlDebounce: ReturnType<typeof setTimeout> | undefined;
 
 		try {
 			exmlWatcher = fsSync.watch(
-				srcDir,
+				resourceDir,
 				{ recursive: true },
 				async (_eventType: string, filename: string | null) => {
 					if (!filename || !filename.endsWith('.exml')) return;

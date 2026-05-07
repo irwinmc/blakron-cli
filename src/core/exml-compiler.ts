@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { ensureDir, writeFile } from '../utils/fs.js';
 import type { ProjectConfig } from './config.js';
 import { compileEXML } from './exml/index.js';
+import { logger } from '../utils/logger.js';
 
 export interface ExmlFile {
 	filename: string;
@@ -88,7 +89,11 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 	const themeFilePath = path.join(projectDir, config.exml.themeFile);
 
 	const exmls = await collectExmlFiles(projectDir);
-	if (exmls.length === 0) return;
+	if (exmls.length === 0) {
+		logger.info('  No .exml files found, skipping');
+		return;
+	}
+	logger.info(`  Found ${exmls.length} .exml file(s), policy: ${policy}`);
 
 	let themeData: ThemeData;
 	try {
@@ -119,6 +124,7 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 			await ensureDir(path.dirname(outPath));
 			await writeFile(outPath, item.gjs);
 		}
+		logger.info(`  Generated ${gjsItems.length} .gjs.js skin file(s)`);
 
 		// Populate exmls in theme JSON so Theme can load skin code at runtime
 		themeData.exmls = gjsItems.map(item => ({
@@ -127,6 +133,7 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 			className: item.className,
 		}));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
+		logger.info(`  Wrote theme → ${path.relative(projectDir, outThemePath)} (${gjsItems.length} skins embedded)`);
 	} else if (policy === 'json') {
 		themeData.exmls = exmls.map(e => toResourceRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
