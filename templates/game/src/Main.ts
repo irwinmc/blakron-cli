@@ -4,7 +4,7 @@
  * 使用 @blakron/core 进行 Canvas 绘制 + @blakron/game 补间动画。
  * 通过 Shape、TextField 等基础显示对象构建游戏场景。
  *
- * 生命周期：constructor → ADDED_TO_STAGE → onAddToStage → runGame → loadResource → createGameScene → startAnimation
+ * 生命周期：constructor → ADDED_TO_STAGE → $onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
 import { createPlayer, Sprite, TextField, Shape, Event, Stage, resource } from '@blakron/core';
 import { Tween } from '@blakron/game';
@@ -13,10 +13,10 @@ import { LoadingUI } from './LoadingUI';
 class Main extends Sprite {
 	public constructor() {
 		super();
-		this.addEventListener(Event.ADDED_TO_STAGE, this.onAdded);
+		this.addEventListener(Event.ADDED_TO_STAGE, this.onAddedToStage);
 	}
 
-	private onAdded(_event: Event): void {
+	private onAddedToStage(_event: Event): void {
 		const stage = this.stage;
 		if (!stage) return;
 
