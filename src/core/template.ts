@@ -14,21 +14,26 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 	const resourceDir = path.resolve('resource');
 	const outResourceDir = path.join(path.resolve(config.output.dir), 'resource');
 	if (await exists(resourceDir)) {
-		await copyDir(resourceDir, outResourceDir, (name) => !name.endsWith(".thm.json"));
+		await copyDir(resourceDir, outResourceDir, name => !name.endsWith('.thm.json'));
 	}
 }
 
 /**
  * Generates the platform entry file (index.html).
  */
-export async function applyTarget(config: ProjectConfig, entryScript?: string): Promise<void> {
+export async function applyTarget(config: ProjectConfig, entryScript?: string, isRelease = false): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
 	const script = entryScript ?? path.basename(config.entry).replace(/\.ts$/, '.js');
-	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config, script));
+	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config, script, isRelease));
 }
 
-function generateIndexHtml(config: ProjectConfig, entryScript: string): string {
+function generateIndexHtml(config: ProjectConfig, entryScript: string, isRelease = false): string {
 	const { stage } = config;
+	const scripts = isRelease
+		? `    <script type="module" src="blakron.engine.js"></script>
+    <script type="module" src="default.thm.js"></script>
+    <script type="module" src="${entryScript}"></script>`
+		: `    <script type="module" src="${entryScript}"></script>`;
 	return `<!DOCTYPE html>
 <html>
 <head>
@@ -46,7 +51,7 @@ function generateIndexHtml(config: ProjectConfig, entryScript: string): string {
         data-content-width="${stage.width}"
         data-content-height="${stage.height}"
     ></canvas>
-    <script type="module" src="${entryScript}"></script>
+${scripts}
 </body>
 </html>`;
 }

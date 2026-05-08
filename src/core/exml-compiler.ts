@@ -114,7 +114,8 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 		await writeFile(outThemePath, JSON.stringify({ ...themeData, exmls: exmlsWithContent }, null, '\t'));
 	} else if (policy === 'gjs') {
 		const gjsItems = exmls.map(e => {
-			const { code, className } = exmlToGjs(e);
+			const className = (e.contents.match(/class="([^"]+)"/) ?? [])[1] ?? path.basename(e.filename, '.exml');
+			const code = compileEXML(e.contents, className, { format: 'esm' });
 			return { relPath: toResourceRelative(e.filename), gjs: code, className };
 		});
 
@@ -137,6 +138,34 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 	} else if (policy === 'json') {
 		themeData.exmls = exmls.map(e => toResourceRelative(e.filename));
 		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
+	} else if (policy === 'bundle') {
+		// Generate ESM skin files to src/_generated/skins/
+		const generatedDir = path.resolve('src/_generated/skins');
+		await ensureDir(generatedDir);
+
+		const gjsItems = exmls.map(e => {
+			const className = (e.contents.match(/class="([^"]+)"/) ?? [])[1] ?? path.basename(e.filename, '.exml');
+			const code = compileEXML(e.contents, className, { format: 'esm' });
+			return { relPath: toResourceRelative(e.filename), gjs: code, className };
+		});
+
+		for (const item of gjsItems) {
+			const outPath = path.join(generatedDir, path.basename(item.relPath, '.exml') + '.ts');
+			await writeFile(outPath, item.gjs);
+		}
+
+		// Generate index.ts that imports all skins and registers on globalThis
+		const indexLines = gjsItems.map(item => {
+			const funcName = item.className.split('.').pop()!;
+			const baseName = path.basename(item.relPath, '.exml');
+			return `import { create${funcName} } from './${baseName}.js';\nglobalThis["${item.className}"] = create${funcName};`;
+		});
+		await writeFile(path.join(generatedDir, 'index.ts'), indexLines.join('\n\n') + '\n');
+
+		// thm.json: only mapping, no skin code
+		themeData.exmls = [];
+		await writeFile(outThemePath, JSON.stringify(themeData, null, '\t'));
+		logger.info(`  Generated ${gjsItems.length} skin(s) to src/_generated/skins/`);
 	}
 }
 

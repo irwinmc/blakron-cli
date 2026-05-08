@@ -52,7 +52,7 @@ export const buildCommand = new Command('build')
 
 			// index.html + assets are needed in ALL modes (including watch)
 			logger.info('Applying target template...');
-			await applyTarget(config, 'main.js');
+			await applyTarget(config, 'main.js', options.minify);
 
 			logger.info('Copying assets...');
 			await copyProjectAssets(config);
