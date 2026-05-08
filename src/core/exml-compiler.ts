@@ -114,8 +114,7 @@ export async function compileExml(config: ProjectConfig): Promise<void> {
 		await writeFile(outThemePath, JSON.stringify({ ...themeData, exmls: exmlsWithContent }, null, '\t'));
 	} else if (policy === 'gjs') {
 		const gjsItems = exmls.map(e => {
-			const className = (e.contents.match(/class="([^"]+)"/) ?? [])[1] ?? path.basename(e.filename, '.exml');
-			const code = compileEXML(e.contents, className, { format: 'esm' });
+			const { code, className } = exmlToGjs(e);
 			return { relPath: toResourceRelative(e.filename), gjs: code, className };
 		});
 
