@@ -6,9 +6,16 @@ import { applyTarget, copyProjectAssets } from '../core/template.js';
 import { BuildError } from '../core/errors.js';
 import { logger } from '../utils/logger.js';
 
+function getReleaseDir(): string {
+	const now = new Date();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+	return `bin-release/${timestamp}`;
+}
+
 export const buildCommand = new Command('build')
 	.description('Build the project')
-	.option('-m, --minify', 'Bundle and minify output', false)
+	.option('-m, --minify', 'Bundle and minify output (release build)', false)
 	.option('--sourcemap', 'Generate sourcemaps', false)
 	.option('--watch', 'Enable watch mode (rebuild on file changes, no dev server)', false)
 	.option('--analyze', 'Output bundle size analysis (esbuild metafile)', false)
@@ -18,7 +25,12 @@ export const buildCommand = new Command('build')
 		try {
 			const config = await loadConfig();
 
-			logger.info('Building...');
+			// Release builds go to bin-release/{timestamp}/
+			if (options.minify) {
+				config.output.dir = getReleaseDir();
+			}
+
+			logger.info(`Building${options.minify ? ' (release)' : ''}...`);
 
 			if (options.watch && options.minify) {
 				logger.warn('Watch mode is typically used with dev builds (without --minify).');

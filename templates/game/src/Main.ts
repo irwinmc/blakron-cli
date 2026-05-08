@@ -6,13 +6,13 @@
  *
  * 生命周期：constructor → ADDED_TO_STAGE → $onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
-import { createPlayer, UILayer, TextField, Shape, Event, Stage, resource } from '@blakron/core';
-import { Button, Theme } from '@blakron/ui';
+import { createPlayer, TextField, Shape, Event, Stage, resource } from '@blakron/core';
+import { Button, Theme, UILayer } from '@blakron/ui';
 import { Tween } from '@blakron/game';
 import { LoadingUI } from './LoadingUI';
 
 class Main extends UILayer {
-	protected createChildren(): void {
+	createChildren(): void {
 		super.createChildren();
 
 		const stage = this.stage;
