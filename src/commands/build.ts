@@ -6,13 +6,6 @@ import { applyTarget, copyProjectAssets } from '../core/template.js';
 import { BuildError } from '../core/errors.js';
 import { logger } from '../utils/logger.js';
 
-function getReleaseDir(): string {
-	const now = new Date();
-	const pad = (n: number) => String(n).padStart(2, '0');
-	const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-	return `bin-release/${timestamp}`;
-}
-
 export const buildCommand = new Command('build')
 	.description('Build the project')
 	.option('-m, --minify', 'Bundle and minify output (release build)', false)
@@ -25,9 +18,8 @@ export const buildCommand = new Command('build')
 		try {
 			const config = await loadConfig();
 
-			// Release builds go to bin-release/{timestamp}/
 			if (options.minify) {
-				config.output.dir = getReleaseDir();
+				config.output.dir = 'bin-release';
 			}
 
 			logger.info(`Building${options.minify ? ' (release)' : ''}...`);
@@ -42,7 +34,7 @@ export const buildCommand = new Command('build')
 			}
 
 			logger.info('Compiling TypeScript...');
-			await compile(config, {
+			const result = await compile(config, {
 				target: 'html5',
 				minify: options.minify,
 				sourcemap: options.sourcemap,
@@ -50,9 +42,8 @@ export const buildCommand = new Command('build')
 				analyze: options.analyze,
 			});
 
-			// index.html + assets are needed in ALL modes (including watch)
 			logger.info('Applying target template...');
-			await applyTarget(config, 'main.js', options.minify);
+			await applyTarget(config, result.outputFiles, options.minify);
 
 			logger.info('Copying assets...');
 			await copyProjectAssets(config);

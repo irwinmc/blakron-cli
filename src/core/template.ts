@@ -7,9 +7,6 @@ import type { ProjectConfig } from './config.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.resolve(__dirname, '../../templates');
 
-/**
- * Copies static assets (resource/, etc.) from the project to the output dir.
- */
 export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 	const resourceDir = path.resolve('resource');
 	const outResourceDir = path.join(path.resolve(config.output.dir), 'resource');
@@ -19,46 +16,72 @@ export async function copyProjectAssets(config: ProjectConfig): Promise<void> {
 }
 
 /**
- * Generates the platform entry file (index.html).
+ * @param outputFiles Map from compile result: { engine, main, thm } → hashed filenames.
  */
-export async function applyTarget(config: ProjectConfig, entryScript?: string, isRelease = false): Promise<void> {
+export async function applyTarget(
+	config: ProjectConfig,
+	outputFiles: Record<string, string> = {},
+	isRelease = false,
+): Promise<void> {
 	const outDir = path.resolve(config.output.dir);
-	const script = entryScript ?? path.basename(config.entry).replace(/\.ts$/, '.js');
-	await writeFile(path.join(outDir, 'index.html'), generateIndexHtml(config, script, isRelease));
+	if (isRelease) {
+		await writeFile(path.join(outDir, 'index.html'), generateReleaseHtml(config, outputFiles));
+	} else {
+		const script = path.basename(config.entry).replace(/\.ts$/, '.js');
+		await writeFile(path.join(outDir, 'index.html'), generateDevHtml(config, script));
+	}
 }
 
-function generateIndexHtml(config: ProjectConfig, entryScript: string, isRelease = false): string {
+function generateReleaseHtml(config: ProjectConfig, files: Record<string, string>): string {
 	const { stage } = config;
-	const scripts = isRelease
-		? `    <script type="module" src="blakron.engine.js"></script>
-    <script type="module" src="default.thm.js"></script>
-    <script type="module" src="${entryScript}"></script>`
-		: `    <script type="module" src="${entryScript}"></script>`;
-	return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-    <title>Blakron Game</title>
-    <style>html,body{margin:0;padding:0;width:100%;height:100%;background:${stage.background};overflow:hidden;}canvas{display:block;}</style>
-</head>
-<body>
-    <canvas id="gameCanvas"
-        data-entry-class="Main"
-        data-orientation="${stage.orientation}"
-        data-frame-rate="${stage.frameRate}"
-        data-scale-mode="${stage.scaleMode}"
-        data-content-width="${stage.width}"
-        data-content-height="${stage.height}"
-    ></canvas>
-${scripts}
-</body>
-</html>`;
+	const engine = files['engine'] ?? 'blakron.engine.js';
+	const main = files['main'] ?? 'main.js';
+	const thm = files['thm'];
+	const thmScript = thm ? '\n    <script type="module" src="' + thm + '"></script>' : '';
+	return (
+		'<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="utf-8">\n    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n    <title>Blakron Game</title>\n    <style>html,body{margin:0;padding:0;width:100%;height:100%;background:' +
+		stage.background +
+		';overflow:hidden;}canvas{display:block;}</style>\n</head>\n<body>\n    <canvas id="gameCanvas"\n        data-entry-class="Main"\n        data-orientation="' +
+		stage.orientation +
+		'"\n        data-frame-rate="' +
+		stage.frameRate +
+		'"\n        data-scale-mode="' +
+		stage.scaleMode +
+		'"\n        data-content-width="' +
+		stage.width +
+		'"\n        data-content-height="' +
+		stage.height +
+		'"\n    ></canvas>\n    <script type="module" src="' +
+		engine +
+		'"></script>' +
+		thmScript +
+		'\n    <script type="module" src="' +
+		main +
+		'"></script>\n</body>\n</html>'
+	);
 }
 
-/**
- * Scaffolds a new project from a built-in template.
- */
+function generateDevHtml(config: ProjectConfig, entryScript: string): string {
+	const { stage } = config;
+	return (
+		'<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="utf-8">\n    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n    <title>Blakron Game</title>\n    <style>html,body{margin:0;padding:0;width:100%;height:100%;background:' +
+		stage.background +
+		';overflow:hidden;}canvas{display:block;}</style>\n</head>\n<body>\n    <canvas id="gameCanvas"\n        data-entry-class="Main"\n        data-orientation="' +
+		stage.orientation +
+		'"\n        data-frame-rate="' +
+		stage.frameRate +
+		'"\n        data-scale-mode="' +
+		stage.scaleMode +
+		'"\n        data-content-width="' +
+		stage.width +
+		'"\n        data-content-height="' +
+		stage.height +
+		'"\n    ></canvas>\n    <script type="module" src="' +
+		entryScript +
+		'"></script>\n</body>\n</html>'
+	);
+}
+
 export async function scaffoldProject(name: string, templateName: string): Promise<void> {
 	const templateDir = path.join(TEMPLATES_DIR, templateName);
 	const destDir = path.resolve(name);
@@ -69,7 +92,6 @@ export async function scaffoldProject(name: string, templateName: string): Promi
 
 	await copyDir(templateDir, destDir);
 
-	// Patch package.json name
 	const pkgPath = path.join(destDir, 'package.json');
 	if (await exists(pkgPath)) {
 		const raw = await fs.readFile(pkgPath, 'utf-8');

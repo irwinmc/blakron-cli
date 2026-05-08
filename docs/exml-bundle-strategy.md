@@ -10,104 +10,160 @@
 ## 目标
 
 ```
-blakron.engine.js     ← core + ui + game，版本更新才变（永久缓存）
-main.js               ← 游戏逻辑 + 皮肤 import，每次发版更新
-default.res.json      ← 资源索引，加资源才变
-default.thm.json      ← 皮肤映射表（几 KB），加皮肤才变
-default.thm.js        ← 皮肤代码（独立 chunk），改皮肤才变
+bin-release/
+├── blakron.engine.{hash}.js   # 引擎自包含，内容哈希（永久缓存）
+├── default.thm.{hash}.js      # 皮肤代码，内容哈希（改皮肤才变）
+├── default.thm.{hash}.json    # 皮肤映射表，内容哈希
+├── default.res.{hash}.json    # 资源索引，内容哈希
+├── main.{hash}.js             # 游戏逻辑，内容哈希
+└── index.html                 # 不缓存，引用上述带 hash 的文件
 ```
 
 ## 构建输出对比
 
-| 文件 | 当前（gjs） | 新方案 |
-|------|-----------|--------|
+| 文件 | 当前（gjs/dev） | 新方案（bundle/release） |
+|------|----------------|------------------------|
 | `Main.js` | 引擎 + 游戏 + 皮肤 | — |
-| `blakron.engine.js` | — | core + ui + game |
+| `blakron.engine.js` | — | 引擎自包含 |
 | `main.js` | — | 游戏逻辑 |
-| `default.res.json` | ✅ | ✅ |
-| `default.thm.json` | 映射 + 皮肤代码 | 仅映射表（几 KB） |
-| `default.thm.js` | — | 皮肤代码（独立 chunk） |
+| `default.res.json` | 无 hash | 带 hash |
+| `default.thm.json` | 映射 + 皮肤代码 | 仅映射表 |
+| `default.thm.js` | — | 皮肤代码（独立） |
+| 目录 | `bin-release/{timestamp}/` | `bin-release/`（固定） |
 
 ## 实现
 
-### 1. esbuild 代码拆分
+### 构建流程（两遍 esbuild）
+
+```
+第一遍：引擎独立打包
+  src/_generated/engine.ts → blakron.engine.{hash}.js
+  自包含，无外部依赖，内容哈希
+
+第二遍：游戏 + 皮肤
+  entry: 'main' → config.entry
+  entry: 'default.thm' → src/_generated/skins/index.ts
+  external: @blakron/core, @blakron/ui, @blakron/game
+  → main.{hash}.js, default.thm.{hash}.js
+```
+
+### 两遍构建代码
 
 ```ts
-// build.ts — minify/release 模式
-await esbuild.build({
-    entryPoints: {
-        'blakron.engine': [],  // 引擎入口（预定义 vendor 列表）
-        'main': config.entry,  // 游戏入口
-        'default.thm': 'src/_generated/skins/index.ts',  // 皮肤入口
-    },
+// compiler.ts — release mode
+const hash = '[hash]';
+
+// Pass 1: engine (self-contained, no external deps)
+const engineResult = await esbuild.build({
+    entryPoints: { 'blakron.engine': engineStubPath },
     outdir: outDir,
+    entryNames: `[name].${hash}`,
     bundle: true,
     minify: true,
-    splitting: true,          // ESM 代码拆分
     format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+    metafile: true,
+});
+
+// Pass 2: game + skins (external engine packages)
+const appResult = await esbuild.build({
+    entryPoints: {
+        'main': path.resolve(config.entry),
+        'default.thm': skinIndex,
+    },
+    outdir: outDir,
+    entryNames: `[name].${hash}`,
+    bundle: true,
+    minify: true,
+    splitting: true,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+    external: ['@blakron/core', '@blakron/ui', '@blakron/game'],
+    metafile: true,
 });
 ```
 
-### 2. index.html
+### 生成 index.html（运行时拼接文件名）
 
-```html
-<script type="module" src="blakron.engine.js"></script>
-<script type="module" src="default.thm.js"></script>
-<script type="module" src="main.js"></script>
+```ts
+// 从 metafile 提取实际文件名
+function getOutputFiles(result: esbuild.BuildResult): Record<string, string> {
+    const files: Record<string, string> = {};
+    for (const [key, value] of Object.entries(result.metafile!.outputs)) {
+        const name = path.basename(key);
+        if (name.startsWith('blakron.engine')) files['engine'] = name;
+        else if (name.startsWith('default.thm')) files['thm'] = name;
+        else if (name.startsWith('main')) files['main'] = name;
+    }
+    return files;
+}
+
+// template.ts 接收实际文件名
+function generateReleaseHtml(config, files: Record<string, string>): string {
+    return `...
+    <script type="module" src="${files.engine}"></script>
+    <script type="module" src="${files.thm}"></script>
+    <script type="module" src="${files.main}"></script>
+...`;
+}
 ```
 
-### 3. 皮肤生成（bundle 策略）
+### 资源文件 hash
+
+```ts
+// 构建完成后，给 res.json 和 thm.json 加 hash
+async function hashStaticFile(filePath: string): Promise<string> {
+    const content = await fs.readFile(filePath);
+    const hash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 8);
+    const hashedPath = filePath.replace(/\.(\w+)$/, `.${hash}.$1`);
+    await fs.rename(filePath, hashedPath);
+    return hashedPath;
+}
+```
+
+### 皮肤生成（bundle 策略）
 
 ```
 resource/skins/*.exml
-       │  exml-compiler
+       │  exml-compiler (format: 'esm')
        ▼
 src/_generated/skins/*.ts     ← ESM 皮肤工厂
 src/_generated/skins/index.ts ← import 全部 + globalThis 注册
-       │  esbuild
+       │  esbuild pass 2
        ▼
-bin-debug/default.thm.js     ← 独立 chunk
+bin-release/default.thm.{hash}.js
 ```
 
 `default.thm.json` 只保留映射表，`exmls` 留空。
 
-### 4. Dev 模式
+### index.html
 
-Dev 模式下不拆分，全部 bundle 进一个文件（保持热更新简单）。
-
-### 5. Theme 兼容
-
-```ts
-// Theme._onConfigLoaded
-if (data.exmls?.length > 0 && data.exmls[0]['gjs']) {
-    this._loadGjsSkins(data.exmls);  // 兼容旧 gjs 模式
-}
-// 新 bundle 模式：exmls 为空，皮肤已在 default.thm.js 中注册到 globalThis
+```html
+<script type="module" src="blakron.engine.a1b2c3d4.js"></script>
+<script type="module" src="default.thm.e5f6g7h8.js"></script>
+<script type="module" src="main.i9j0k1l2.js"></script>
 ```
 
-## 配置
+## Dev 模式 vs Release 模式
 
-```ts
-// blakron.config.ts
-export default {
-    exml: {
-        publishPolicy: 'bundle',     // 'gjs' | 'bundle'
-        themeFile: 'resource/default.thm.json',
-    },
-};
-```
+| | Dev | Release |
+|---|---|---|
+| 输出 | `bin-debug/Main.js`（单文件） | `bin-release/`（多文件 + hash） |
+| 皮肤 | gjs 内联到 thm.json | bundle 独立 thm.js |
+| splitting | 无 | 两遍构建 |
+| 缓存 | 不缓存 | 引擎永久缓存，其余 hash |
 
 ## 缓存策略（线上部署）
 
-| 文件 | 缓存 | URL 示例 |
-|------|------|---------|
-| `blakron.engine.js` | `Cache-Control: max-age=31536000` | `/v0.6.0/blakron.engine.js` |
-| `main.js` | `no-cache` 或带 hash | `/main.{hash}.js` |
-| `default.res.json` | 带 hash | `/default.res.{hash}.json` |
-| `default.thm.json` | 带 hash | `/default.thm.{hash}.json` |
-| `default.thm.js` | 带 hash | `/default.thm.{hash}.js` |
-
-引擎文件放版本号目录下，用户升级引擎版本后才重新下载。
+| 文件 | Cache-Control |
+|------|---------------|
+| `blakron.engine.{hash}.js` | `max-age=31536000, immutable` |
+| `default.thm.{hash}.js` | `max-age=31536000, immutable` |
+| `main.{hash}.js` | `max-age=31536000, immutable` |
+| `default.*.{hash}.json` | `max-age=31536000, immutable` |
+| `index.html` | `no-cache` |
 
 ## 迁移
 
