@@ -78,16 +78,19 @@ blakron build [options]
 | `--watch`       | Rebuild source on file changes                         | `false` |
 | `--analyze`     | Print bundle size analysis (esbuild metafile)          | `false` |
 
-**Output:**
+**Output (Egret-aligned shape, ESM under the hood):**
 
-| Mode           | Entry file       | Output dir    |
-| -------------- | ---------------- | ------------- |
-| development    | `main.js`        | `bin-debug`   |
-| release (`-r`) | `main.[hash].js` | `bin-release` |
+| Mode           | Layout                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------- |
+| development    | `bin-debug/` — per-file `.js` mirroring `src/` (`Main.js`, `com/.../X.js`) + engine chunks in `js/`       |
+| release (`-r`) | `bin-release/web/<timestamp>/` — `js/main.min_<hash>.js` + `js/blakron.*.min_<hash>.js` + `manifest.json` |
 
-In both modes the engine, game code, and compiled skins are bundled into one
-browser-runnable ES module. `resource/` files keep fixed names (they are
-referenced by hardcoded paths in your source); only the entry script is hashed.
+Engine packages (`@blakron/*`) are bundled into separate `js/blakron.<name>.js`
+chunks and wired up through an HTML **import map**, so the app bundle and engine
+resolve bare specifiers (`import { Sprite } from '@blakron/core'`) in the browser
+without duplicating engine code. `resource/` (including the compiled
+`default.thm.json`) is copied with fixed names, since user code references those
+paths directly. The entry script bootstraps via your own `createPlayer()` call.
 
 ### `blakron dev`
 

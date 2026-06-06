@@ -15,8 +15,10 @@ export interface BuildContext {
 	readonly watch: boolean;
 	/** Artifacts produced during the build, populated incrementally by plugins. */
 	readonly outputs: {
-		/** Entry script filename, relative to the output dir (e.g. `main.js`). */
+		/** Entry script path, relative to the output dir (e.g. `Main.js`, `js/main.min_ab12.js`). */
 		entryScript?: string;
+		/** Engine import-map: package specifier → chunk path relative to output dir. */
+		engine: Record<string, string>;
 	};
 	/** Cleanup callbacks registered by long-lived plugins (watchers, contexts). */
 	readonly disposers: Array<() => Promise<void> | void>;
@@ -38,7 +40,7 @@ export function createContext(
 		sourcemap: options.sourcemap ?? false,
 		analyze: options.analyze ?? false,
 		watch: options.watch ?? false,
-		outputs: {},
+		outputs: { engine: {} },
 		disposers: [],
 	};
 }

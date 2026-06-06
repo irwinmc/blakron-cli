@@ -1,16 +1,16 @@
 import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
-import { loadProject } from '../core/project.js';
+import * as path from 'node:path';
+import { loadConfig } from '../core/config.js';
+import { OUTPUT_DIRS } from '../core/project.js';
 import { logger } from '../utils/logger.js';
 
 export const cleanCommand = new Command('clean').description('Remove build output directories').action(async () => {
-	const dev = await loadProject('development');
-	const release = await loadProject('release');
-	const dirs = [...new Set([dev.outputDir, release.outputDir])];
+	const config = await loadConfig();
+	const names = [...new Set([config.output.dir, OUTPUT_DIRS.release])];
 
-	for (const dir of dirs) {
-		await fs.rm(dir, { recursive: true, force: true });
+	for (const name of names) {
+		await fs.rm(path.resolve(name), { recursive: true, force: true });
 	}
-	const names = dirs.map(d => d.replace(process.cwd() + '/', '') + '/');
-	logger.success(`Cleaned ${names.join(', ')}`);
+	logger.success(`Cleaned ${names.map(n => n + '/').join(', ')}`);
 });

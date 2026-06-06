@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { loadConfig, type ProjectConfig } from './config.js';
 
 export type BuildMode = 'development' | 'release';
@@ -19,27 +20,74 @@ export interface Project {
 	readonly config: ProjectConfig;
 	/** Absolute path to the entry source file. */
 	readonly entry: string;
-	/** Absolute output directory (`bin-debug` in dev, `bin-release` in release). */
+	/** Absolute path to the source root directory (`src/`). */
+	readonly srcDir: string;
+	/**
+	 * Absolute output directory.
+	 * - development: `bin-debug`
+	 * - release: `bin-release/web/<timestamp>` (Egret-style versioned folder)
+	 */
 	readonly outputDir: string;
 	/** Absolute path to the `resource/` directory. */
 	readonly resourceDir: string;
 	/** Absolute path to the theme file, when EXML is enabled. */
 	readonly themeFile?: string;
+	/**
+	 * `@blakron/*` engine packages this project depends on (excluding the CLI).
+	 * Each is bundled into its own chunk and wired up via an HTML import map.
+	 */
+	readonly enginePackages: string[];
 }
+
+/** Base output folder names, used by both build and clean. */
+export const OUTPUT_DIRS = { development: 'bin-debug', release: 'bin-release' } as const;
 
 /** Loads and resolves the project rooted at the current working directory. */
 export async function loadProject(mode: BuildMode): Promise<Project> {
 	const root = process.cwd();
 	const config = await loadConfig();
-	const outputName = mode === 'release' ? 'bin-release' : config.output.dir;
+	const outputDir =
+		mode === 'release'
+			? path.resolve(root, OUTPUT_DIRS.release, 'web', timestamp())
+			: path.resolve(root, config.output.dir);
 
 	return {
 		root,
 		mode,
 		config,
 		entry: path.resolve(root, config.entry),
-		outputDir: path.resolve(root, outputName),
+		srcDir: path.resolve(root, 'src'),
+		outputDir,
 		resourceDir: path.resolve(root, 'resource'),
 		themeFile: config.exml ? path.resolve(root, config.exml.themeFile) : undefined,
+		enginePackages: detectEnginePackages(root),
 	};
+}
+
+/** Reads `@blakron/*` runtime dependencies (excluding the CLI) from package.json. */
+function detectEnginePackages(root: string): string[] {
+	try {
+		const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf-8')) as {
+			dependencies?: Record<string, string>;
+		};
+		return Object.keys(pkg.dependencies ?? {})
+			.filter(name => name.startsWith('@blakron/') && name !== '@blakron/cli')
+			.sort();
+	} catch {
+		return [];
+	}
+}
+
+/** Egret-style `YYMMDDHHmmss` version stamp. */
+function timestamp(): string {
+	const d = new Date();
+	const p = (n: number) => String(n).padStart(2, '0');
+	return (
+		String(d.getFullYear() % 100) +
+		p(d.getMonth() + 1) +
+		p(d.getDate()) +
+		p(d.getHours()) +
+		p(d.getMinutes()) +
+		p(d.getSeconds())
+	);
 }
