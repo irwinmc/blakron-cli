@@ -1,12 +1,10 @@
-import * as esbuild from 'esbuild';
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
-import { ensureDir } from '../utils/fs.js';
-import { applyTarget, copyProjectAssets } from './template.js';
-import { compileExml } from './exml-compiler.js';
-import type { ProjectConfig } from './config.js';
+import type { Project } from './project.js';
+import { createContext, runPipeline, disposeContext, type BuildContext } from './pipeline.js';
+import { compileExml, compileSource, generateHtml, copyAssets } from './plugins/index.js';
 import { logger } from '../utils/logger.js';
 
 export interface DevServerOptions {
@@ -15,103 +13,63 @@ export interface DevServerOptions {
 }
 
 /**
- * Starts a development server with file watching.
+ * Starts a development server.
  *
- * - esbuild watches .ts files → auto recompile
- * - fs.watch monitors .exml files → auto recompile
- * - Browser does NOT auto-refresh — you control when to reload manually
+ * The build pipeline runs once with watch enabled: esbuild rebuilds `main.js`
+ * on every source change, and an `fs.watch` on `resource/` recompiles EXML and
+ * re-copies assets. Files are served straight from the output directory.
+ * The browser is not auto-reloaded — refresh manually to pick up changes.
  */
-export async function startDevServer(config: ProjectConfig, options: DevServerOptions): Promise<void> {
-	const outDir = path.resolve(config.output.dir);
-	await ensureDir(outDir);
+export async function startDevServer(project: Project, options: DevServerOptions): Promise<void> {
+	const ctx = createContext(project, { sourcemap: options.sourcemap, watch: true });
+	await runPipeline(ctx, [compileExml(), compileSource(), generateHtml(), copyAssets()]);
 
-	// ── Generate static files (index.html, resource/) ────────────────────────
-	await applyTarget(config);
-	await copyProjectAssets(config);
+	watchResources(project, ctx);
+	const server = startHttpServer(project, options.port);
 
-	// ── Initial EXML compilation ─────────────────────────────────────────────
-	if (config.exml) {
-		try {
-			await compileExml(config);
-			logger.info('EXML skins compiled');
-		} catch (err) {
-			logger.warn(`EXML compilation failed: ${err instanceof Error ? err.message : err}`);
-		}
-	}
-
-	// ── esbuild context: bundle + watch mode ──────────────────────────────────
-	const ctx = await esbuild.context({
-		entryPoints: [config.entry],
-		outdir: outDir,
-		bundle: true,
-		sourcemap: options.sourcemap,
-		target: 'es2022',
-		format: 'esm',
-		platform: 'browser',
-		define: {
-			'process.env.DEBUG': 'true',
-			'process.env.RELEASE': 'false',
-		},
-		logLevel: 'warning',
+	process.on('SIGINT', async () => {
+		logger.info('Stopping dev server...');
+		await disposeContext(ctx);
+		server.close();
+		process.exit(0);
 	});
+}
 
-	// Start watching — esbuild rebuilds on every TS file change.
-	await ctx.watch();
+/** Recompiles EXML and re-copies assets when a `.exml` file changes. */
+function watchResources(project: Project, ctx: BuildContext): void {
+	if (!project.config.exml) return;
 
-	// esbuild serve provides an in-memory file server for compiled JS.
-	const esbuildServer = await ctx.serve({ port: 0 });
-	const esbuildHost = esbuildServer.hosts[0] ?? '127.0.0.1';
-
-	// ── EXML file watcher ─────────────────────────────────────────────────────
-	let exmlWatcher: fsSync.FSWatcher | undefined;
-	if (config.exml) {
-		const resourceDir = path.resolve('resource');
-		let exmlDebounce: ReturnType<typeof setTimeout> | undefined;
-
-		try {
-			exmlWatcher = fsSync.watch(
-				resourceDir,
-				{ recursive: true },
-				async (_eventType: string, filename: string | null) => {
-					if (!filename || !filename.endsWith('.exml')) return;
-
-					// Debounce: batch rapid changes (e.g. IDE save multiple files)
-					if (exmlDebounce) clearTimeout(exmlDebounce);
-					exmlDebounce = setTimeout(async () => {
-						const shortName = filename.split(/[/\\]/).pop() ?? filename;
-						logger.info(`EXML changed: ${shortName}, recompiling...`);
-						try {
-							await compileExml(config);
-							logger.success('EXML skins recompiled');
-						} catch (err) {
-							logger.warn(`EXML recompile failed: ${err instanceof Error ? err.message : err}`);
-						}
-					}, 100);
-				},
-			);
-		} catch {
-			// fs.watch recursive may not be supported on all platforms
-			logger.warn('EXML watcher not available (recursive fs.watch unsupported)');
-		}
+	let debounce: ReturnType<typeof setTimeout> | undefined;
+	let watcher: fsSync.FSWatcher;
+	try {
+		watcher = fsSync.watch(project.resourceDir, { recursive: true }, (_event, filename) => {
+			if (!filename || !filename.endsWith('.exml')) return;
+			clearTimeout(debounce);
+			debounce = setTimeout(async () => {
+				logger.info(`EXML changed: ${path.basename(filename)}, recompiling...`);
+				try {
+					await compileExml().apply(ctx);
+					await copyAssets().apply(ctx);
+				} catch (err) {
+					logger.warn(`EXML recompile failed: ${err instanceof Error ? err.message : err}`);
+				}
+			}, 100);
+		});
+	} catch {
+		logger.warn('EXML watcher unavailable (recursive fs.watch unsupported on this platform).');
+		return;
 	}
+	ctx.disposers.push(() => watcher.close());
+}
 
-	// ── HTTP server ───────────────────────────────────────────────────────────
+/** Serves static files from the project output directory. */
+function startHttpServer(project: Project, port: number): http.Server {
 	const server = http.createServer(async (req, res) => {
-		const url = req.url ?? '/';
-
-		// Forward compiled JS files to esbuild's in-memory server.
-		if (url.endsWith('.js') || url.endsWith('.js.map')) {
-			proxyRequest(req, res, esbuildHost, esbuildServer.port);
-			return;
-		}
-
-		// Serve static files from the output directory.
-		const filePath = path.join(outDir, url === '/' ? 'index.html' : url);
-
+		const url = (req.url ?? '/').split('?')[0];
+		const filePath = path.join(project.outputDir, url === '/' ? 'index.html' : url);
 		try {
 			const data = await fs.readFile(filePath);
-			const contentType = filePath.endsWith('.html') ? 'text/html; charset=utf-8' : getMimeType(filePath);
-			res.writeHead(200, { 'Content-Type': contentType });
+			res.writeHead(200, { 'Content-Type': mimeType(filePath) });
 			res.end(data);
 		} catch {
 			res.writeHead(404);
@@ -119,67 +77,35 @@ export async function startDevServer(config: ProjectConfig, options: DevServerOp
 		}
 	});
 
-	server.listen(options.port, () => {
-		logger.success(`Dev server running at http://localhost:${options.port}`);
-		logger.info('Watching for file changes...');
-		if (config.exml) {
-			logger.info('Watching EXML skins for changes');
-		}
+	server.listen(port, () => {
+		logger.success(`Dev server running at http://localhost:${port}`);
+		logger.info('Watching for changes (refresh the browser to reload)...');
 	});
-
-	// Graceful shutdown on Ctrl+C.
-	process.on('SIGINT', async () => {
-		logger.info('Stopping dev server...');
-		exmlWatcher?.close();
-		await ctx.dispose();
-		server.close();
-		process.exit(0);
-	});
+	return server;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+const MIME_TYPES: Record<string, string> = {
+	'.html': 'text/html; charset=utf-8',
+	'.js': 'application/javascript',
+	'.mjs': 'application/javascript',
+	'.map': 'application/json',
+	'.css': 'text/css',
+	'.json': 'application/json',
+	'.png': 'image/png',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.gif': 'image/gif',
+	'.svg': 'image/svg+xml',
+	'.webp': 'image/webp',
+	'.mp3': 'audio/mpeg',
+	'.ogg': 'audio/ogg',
+	'.wav': 'audio/wav',
+	'.mp4': 'video/mp4',
+	'.woff': 'font/woff',
+	'.woff2': 'font/woff2',
+	'.ttf': 'font/ttf',
+};
 
-/** Proxies an incoming request to esbuild's internal serve port. */
-function proxyRequest(req: http.IncomingMessage, res: http.ServerResponse, host: string, port: number): void {
-	const options: http.RequestOptions = {
-		hostname: host,
-		port,
-		path: req.url,
-		method: req.method,
-		headers: req.headers,
-	};
-	const proxy = http.request(options, proxyRes => {
-		res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers);
-		proxyRes.pipe(res, { end: true });
-	});
-	proxy.on('error', () => {
-		res.writeHead(502);
-		res.end('Bad gateway');
-	});
-	req.pipe(proxy, { end: true });
-}
-
-/** Returns a basic MIME type for common file extensions. */
-function getMimeType(filePath: string): string {
-	const ext = path.extname(filePath).toLowerCase();
-	const types: Record<string, string> = {
-		'.html': 'text/html',
-		'.js': 'application/javascript',
-		'.css': 'text/css',
-		'.json': 'application/json',
-		'.png': 'image/png',
-		'.jpg': 'image/jpeg',
-		'.jpeg': 'image/jpeg',
-		'.gif': 'image/gif',
-		'.svg': 'image/svg+xml',
-		'.webp': 'image/webp',
-		'.mp3': 'audio/mpeg',
-		'.ogg': 'audio/ogg',
-		'.wav': 'audio/wav',
-		'.mp4': 'video/mp4',
-		'.woff': 'font/woff',
-		'.woff2': 'font/woff2',
-		'.ttf': 'font/ttf',
-	};
-	return types[ext] ?? 'application/octet-stream';
+function mimeType(filePath: string): string {
+	return MIME_TYPES[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream';
 }

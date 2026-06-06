@@ -45,38 +45,49 @@ Scaffold a new project from a template.
 blakron create <name> [options]
 ```
 
-| Option                  | Description                            | Default |
-| ----------------------- | -------------------------------------- | ------- |
-| `--template <template>` | Template: `game` \| `empty`            | `game`  |
+| Option                  | Description                 | Default |
+| ----------------------- | --------------------------- | ------- |
+| `--template <template>` | Template: `game` \| `empty` | `game`  |
 
 **Templates:**
 
-| Template | Extends    | Dependencies                                        | Description                                        |
-| -------- | ---------- | --------------------------------------------------- | -------------------------------------------------- |
-| `game`   | `Sprite`   | `@blakron/core` + `@blakron/game` + `@blakron/ui`   | Full-featured project with resource loading, scene building, and Tween animation |
-| `empty`  | `Sprite`   | `@blakron/core`                                     | Minimal project — pure Canvas rendering, no extra dependencies |
+| Template | Extends  | Dependencies                                      | Description                                                                      |
+| -------- | -------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `game`   | `Sprite` | `@blakron/core` + `@blakron/game` + `@blakron/ui` | Full-featured project with resource loading, scene building, and Tween animation |
+| `empty`  | `Sprite` | `@blakron/core`                                   | Minimal project — pure Canvas rendering, no extra dependencies                   |
 
 **Lifecycle:**
 
-| Template | Entry class           | Lifecycle                                                                                        |
-| -------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| Template | Entry class           | Lifecycle                                                                                                           |
+| -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `game`   | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage` → `runGame` → `loadResource` → `createGameScene` → `startAnimation` |
-| `empty`  | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                                  |
+| `empty`  | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                                                     |
 
 ### `blakron build`
 
-Compile and bundle the project.
+Compile and bundle the project into a single self-contained ESM bundle.
 
 ```bash
 blakron build [options]
 ```
 
-| Option          | Description                                        | Default |
-| --------------- | -------------------------------------------------- | ------- |
-| `-m, --minify`  | Bundle and minify output                           | `false` |
-| `--sourcemap`   | Generate sourcemaps                                | `false` |
-| `--watch`       | Watch mode — rebuild on file changes               | `false` |
-| `--analyze`     | Print bundle size analysis (esbuild metafile)      | `false` |
+| Option          | Description                                            | Default |
+| --------------- | ------------------------------------------------------ | ------- |
+| `-r, --release` | Minified, content-hashed release build (→ bin-release) | `false` |
+| `--sourcemap`   | Generate sourcemaps                                    | `false` |
+| `--watch`       | Rebuild source on file changes                         | `false` |
+| `--analyze`     | Print bundle size analysis (esbuild metafile)          | `false` |
+
+**Output:**
+
+| Mode           | Entry file       | Output dir    |
+| -------------- | ---------------- | ------------- |
+| development    | `main.js`        | `bin-debug`   |
+| release (`-r`) | `main.[hash].js` | `bin-release` |
+
+In both modes the engine, game code, and compiled skins are bundled into one
+browser-runnable ES module. `resource/` files keep fixed names (they are
+referenced by hardcoded paths in your source); only the entry script is hashed.
 
 ### `blakron dev`
 
@@ -86,14 +97,14 @@ Start a development server with auto-recompilation on file changes (manual brows
 blakron dev [options]
 ```
 
-| Option               | Description        | Default |
-| -------------------- | ------------------ | ------- |
-| `-p, --port <port>`  | Port to listen     | `3000`  |
-| `--sourcemap`        | Generate sourcemaps | `false` |
+| Option              | Description         | Default |
+| ------------------- | ------------------- | ------- |
+| `-p, --port <port>` | Port to listen      | `3000`  |
+| `--sourcemap`       | Generate sourcemaps | `false` |
 
 ### `blakron clean`
 
-Remove the build output directory.
+Remove the build output directories (`bin-debug` and `bin-release`).
 
 ```bash
 blakron clean
@@ -118,7 +129,7 @@ export default {
 	},
 	// Optional: enable EXML skin compilation
 	exml: {
-		publishPolicy: 'gjs',                     // path | content | gjs | json
+		publishPolicy: 'gjs', // path | content | gjs | json
 		themeFile: 'resource/default.thm.json',
 	},
 };
@@ -126,19 +137,19 @@ export default {
 
 **Options:**
 
-| Field                | Type     | Description                                                                                                          |
-| -------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `target`             | `string` | Build target — currently only `'html5'`                                                                              |
-| `entry`              | `string` | Entry file path, default `'src/Main.ts'`                                                                             |
-| `output.dir`         | `string` | Output directory, default `'bin-debug'`                                                                              |
-| `stage.width`        | `number` | Stage width                                                                                                          |
-| `stage.height`       | `number` | Stage height                                                                                                         |
+| Field                | Type     | Description                                                                                                              |
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `target`             | `string` | Build target — currently only `'html5'`                                                                                  |
+| `entry`              | `string` | Entry file path, default `'src/Main.ts'`                                                                                 |
+| `output.dir`         | `string` | Output directory, default `'bin-debug'`                                                                                  |
+| `stage.width`        | `number` | Stage width                                                                                                              |
+| `stage.height`       | `number` | Stage height                                                                                                             |
 | `stage.scaleMode`    | `string` | Scale mode: `showAll` / `noScale` / `exactFit` / `noBorder` / `fixedHeight` / `fixedWidth` / `fixedNarrow` / `fixedWide` |
-| `stage.orientation`  | `string` | Orientation: `auto` / `portrait` / `landscape`                                                                      |
-| `stage.frameRate`    | `number` | Frame rate — must be a positive integer                                                                              |
-| `stage.background`   | `string` | Background color (e.g. `'#000000'`)                                                                                  |
-| `exml.publishPolicy` | `string` | EXML output strategy: `path` / `content` / `gjs` / `json`                                                            |
-| `exml.themeFile`     | `string` | Theme JSON file path                                                                                                 |
+| `stage.orientation`  | `string` | Orientation: `auto` / `portrait` / `landscape`                                                                           |
+| `stage.frameRate`    | `number` | Frame rate — must be a positive integer                                                                                  |
+| `stage.background`   | `string` | Background color (e.g. `'#000000'`)                                                                                      |
+| `exml.publishPolicy` | `string` | EXML output strategy: `path` / `content` / `gjs` / `json`                                                                |
+| `exml.themeFile`     | `string` | Theme JSON file path                                                                                                     |
 
 ## EXML Skin Compiler
 

@@ -1,59 +1,65 @@
 import { Command } from 'commander';
-import { loadConfig } from '../core/config.js';
-import { compile } from '../core/compiler.js';
-import { compileExml } from '../core/exml-compiler.js';
-import { applyTarget, copyProjectAssets } from '../core/template.js';
+import { loadProject } from '../core/project.js';
+import { createContext, runPipeline, disposeContext } from '../core/pipeline.js';
+import { defaultPlugins } from '../core/plugins/index.js';
 import { BuildError } from '../core/errors.js';
 import { logger } from '../utils/logger.js';
 
+interface BuildOptions {
+	release: boolean;
+	sourcemap: boolean;
+	watch: boolean;
+	analyze: boolean;
+}
+
 export const buildCommand = new Command('build')
 	.description('Build the project')
-	.option('-m, --minify', 'Bundle and minify output (release build)', false)
+	.option('-r, --release', 'Minified, content-hashed release build (→ bin-release)', false)
 	.option('--sourcemap', 'Generate sourcemaps', false)
-	.option('--watch', 'Enable watch mode (rebuild on file changes, no dev server)', false)
-	.option('--analyze', 'Output bundle size analysis (esbuild metafile)', false)
-	.action(async (options: { minify: boolean; sourcemap: boolean; watch: boolean; analyze: boolean }) => {
+	.option('--watch', 'Rebuild source on file changes', false)
+	.option('--analyze', 'Print esbuild bundle size analysis', false)
+	.action(async (options: BuildOptions) => {
 		const start = Date.now();
-
 		try {
-			const config = await loadConfig();
-
-			if (options.minify) {
-				config.output.dir = 'bin-release';
+			const mode = options.release ? 'release' : 'development';
+			if (options.watch && options.release) {
+				logger.warn('--watch is a development workflow; ignoring --release.');
 			}
 
-			logger.info(`Building${options.minify ? ' (release)' : ''}...`);
+			const project = await loadProject(options.watch ? 'development' : mode);
+			logger.info(`Building (${project.mode})...`);
 
-			if (options.watch && options.minify) {
-				logger.warn('Watch mode is typically used with dev builds (without --minify).');
-			}
-
-			if (config.exml) {
-				logger.info('Compiling EXML...');
-				await compileExml(config);
-			}
-
-			logger.info('Compiling TypeScript...');
-			const result = await compile(config, {
-				target: 'html5',
-				minify: options.minify,
+			const ctx = createContext(project, {
 				sourcemap: options.sourcemap,
-				watch: options.watch,
 				analyze: options.analyze,
+				watch: options.watch,
 			});
+			await runPipeline(ctx, defaultPlugins());
 
-			logger.info('Applying target template...');
-			await applyTarget(config, result.outputFiles, options.minify);
-
-			logger.info('Copying assets...');
-			await copyProjectAssets(config);
-
-			if (!options.watch) {
-				const elapsed = ((Date.now() - start) / 1000).toFixed(2);
-				logger.success(`Build completed in ${elapsed}s → ${config.output.dir}/`);
+			if (options.watch) {
+				logger.success('Watching for changes. Press Ctrl+C to stop.');
+				await waitForShutdown(() => disposeContext(ctx));
+				return;
 			}
+
+			const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+			logger.success(`Build completed in ${elapsed}s → ${relativeOut(project.outputDir)}/`);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			throw new BuildError(`Build failed: ${message}`, err instanceof Error ? err : undefined);
 		}
 	});
+
+function relativeOut(outputDir: string): string {
+	return outputDir.replace(process.cwd() + '/', '');
+}
+
+/** Resolves when the process receives SIGINT, after running cleanup. */
+function waitForShutdown(cleanup: () => Promise<void> | void): Promise<void> {
+	return new Promise<void>(resolve => {
+		process.on('SIGINT', async () => {
+			await cleanup();
+			resolve();
+		});
+	});
+}
