@@ -8,9 +8,9 @@
 		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@blakron/core": "^0.6.0"
+		"@blakron/core": "latest"
 	},
 	"devDependencies": {
-		"@blakron/cli": "^0.3.11"
+		"@blakron/cli": "latest"
 	}
 }

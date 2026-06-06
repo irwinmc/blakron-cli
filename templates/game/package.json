@@ -8,11 +8,11 @@
 		"clean": "blakron clean"
 	},
 	"dependencies": {
-		"@blakron/core": "^0.6.0",
-		"@blakron/game": "^0.3.0",
-		"@blakron/ui": "^0.4.4"
+		"@blakron/core": "latest",
+		"@blakron/game": "latest",
+		"@blakron/ui": "latest"
 	},
 	"devDependencies": {
-		"@blakron/cli": "^0.3.11"
+		"@blakron/cli": "latest"
 	}
 }

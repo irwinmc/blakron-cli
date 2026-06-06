@@ -1,6 +1,6 @@
 {
 	"name": "@blakron/cli",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"description": "Blakron CLI - build tool for Blakron game engine",
 	"type": "module",
 	"bin": {
@@ -8,12 +8,21 @@
 	},
 	"main": "./dist/define.js",
 	"types": "./dist/define.d.ts",
+	"files": [
+		"dist",
+		"templates",
+		"README.md"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"build": "tsc --build",
 		"dev": "tsc --watch",
 		"clean": "rm -rf dist",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"prepublishOnly": "tsc --build",
 		"blakron": "tsx src/index.ts"
 	},
 	"dependencies": {
