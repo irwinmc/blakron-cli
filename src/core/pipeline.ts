@@ -17,6 +17,8 @@ export interface BuildContext {
 	readonly outputs: {
 		/** Entry script path, relative to the output dir (e.g. `Main.js`, `js/main.min_ab12.js`). */
 		entryScript?: string;
+		/** Compiled skins module path, relative to the output dir (e.g. `js/default.thm.js`). */
+		skinsScript?: string;
 		/** Engine import-map: package specifier → chunk path relative to output dir. */
 		engine: Record<string, string>;
 	};

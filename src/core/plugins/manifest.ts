@@ -21,7 +21,7 @@ export function writeManifest(): BuildPlugin {
 
 			const manifest = {
 				initial: Object.values(ctx.outputs.engine),
-				game: ctx.outputs.entryScript ? [ctx.outputs.entryScript] : [],
+				game: [ctx.outputs.skinsScript, ctx.outputs.entryScript].filter(Boolean),
 			};
 			await writeFile(
 				path.join(ctx.project.outputDir, 'manifest.json'),

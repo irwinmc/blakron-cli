@@ -7,9 +7,9 @@ import type { BuildContext, BuildPlugin } from '../pipeline.js';
  *
  * - The theme file is skipped — `compile EXML` emits it with the resolved skin
  *   payload, so copying the source version would overwrite it.
- * - `.exml` source files are skipped when the publish policy embeds skins
- *   (`gjs` / `content`), since the runtime no longer needs them — this keeps
- *   the output clean (no raw skin sources shipped), matching Egret's release.
+ * - `.exml` source files are skipped when EXML is enabled, since skins are
+ *   compiled to a JS module and the runtime never reads raw `.exml` — this
+ *   keeps the output clean, matching Egret's release.
  */
 export function copyAssets(): BuildPlugin {
 	return {
@@ -20,12 +20,12 @@ export function copyAssets(): BuildPlugin {
 
 			const exml = project.config.exml;
 			const themeName = exml ? path.basename(exml.themeFile) : undefined;
-			const skipExml = exml ? exml.publishPolicy === 'gjs' || exml.publishPolicy === 'content' : false;
 
 			const dest = path.join(project.outputDir, 'resource');
 			await copyDir(project.resourceDir, dest, name => {
 				if (name === themeName) return false;
-				if (skipExml && name.endsWith('.exml')) return false;
+				// Skins are compiled to a JS module — never ship raw .exml sources.
+				if (exml && name.endsWith('.exml')) return false;
 				return true;
 			});
 		},

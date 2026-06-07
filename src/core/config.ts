@@ -3,7 +3,6 @@ import { exists } from '../utils/fs.js';
 import { ConfigError } from './errors.js';
 
 export type BuildTarget = 'html5';
-export type ExmlPolicy = 'path' | 'content' | 'gjs' | 'json';
 
 export interface StageConfig {
 	width: number;
@@ -15,7 +14,6 @@ export interface StageConfig {
 }
 
 export interface ExmlConfig {
-	publishPolicy: ExmlPolicy;
 	themeFile: string;
 }
 

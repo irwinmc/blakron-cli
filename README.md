@@ -132,7 +132,6 @@ export default {
 	},
 	// Optional: enable EXML skin compilation
 	exml: {
-		publishPolicy: 'gjs', // path | content | gjs | json
 		themeFile: 'resource/default.thm.json',
 	},
 };
@@ -140,19 +139,18 @@ export default {
 
 **Options:**
 
-| Field                | Type     | Description                                                                                                              |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `target`             | `string` | Build target — currently only `'html5'`                                                                                  |
-| `entry`              | `string` | Entry file path, default `'src/Main.ts'`                                                                                 |
-| `output.dir`         | `string` | Output directory, default `'bin-debug'`                                                                                  |
-| `stage.width`        | `number` | Stage width                                                                                                              |
-| `stage.height`       | `number` | Stage height                                                                                                             |
-| `stage.scaleMode`    | `string` | Scale mode: `showAll` / `noScale` / `exactFit` / `noBorder` / `fixedHeight` / `fixedWidth` / `fixedNarrow` / `fixedWide` |
-| `stage.orientation`  | `string` | Orientation: `auto` / `portrait` / `landscape`                                                                           |
-| `stage.frameRate`    | `number` | Frame rate — must be a positive integer                                                                                  |
-| `stage.background`   | `string` | Background color (e.g. `'#000000'`)                                                                                      |
-| `exml.publishPolicy` | `string` | EXML output strategy: `path` / `content` / `gjs` / `json`                                                                |
-| `exml.themeFile`     | `string` | Theme JSON file path                                                                                                     |
+| Field               | Type     | Description                                                                                                              |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `target`            | `string` | Build target — currently only `'html5'`                                                                                  |
+| `entry`             | `string` | Entry file path, default `'src/Main.ts'`                                                                                 |
+| `output.dir`        | `string` | Output directory, default `'bin-debug'`                                                                                  |
+| `stage.width`       | `number` | Stage width                                                                                                              |
+| `stage.height`      | `number` | Stage height                                                                                                             |
+| `stage.scaleMode`   | `string` | Scale mode: `showAll` / `noScale` / `exactFit` / `noBorder` / `fixedHeight` / `fixedWidth` / `fixedNarrow` / `fixedWide` |
+| `stage.orientation` | `string` | Orientation: `auto` / `portrait` / `landscape`                                                                           |
+| `stage.frameRate`   | `number` | Frame rate — must be a positive integer                                                                                  |
+| `stage.background`  | `string` | Background color (e.g. `'#000000'`)                                                                                      |
+| `exml.themeFile`    | `string` | Theme JSON file path                                                                                                     |
 
 ## EXML Skin Compiler
 
@@ -170,14 +168,21 @@ The CLI includes a complete EXML skin parsing and code generation pipeline (XML 
 
 ### Compilation Pipeline
 
+All `.exml` skins compile into a single ESM module — `js/default.thm.js` (dev)
+or `js/default.thm.min_<hash>.js` (release) — that registers each skin factory.
+`default.thm.json` keeps only the component→skin mapping plus a `skinsJs`
+pointer to that module, which the runtime `Theme` imports. No `.exml` is shipped.
+
 ```
-resource/skins/ButtonSkin.exml
+resource/skins/*.exml
         ↓ parseXML()
     XML Element Tree
         ↓ parseEXML()
        SkinIR
-        ↓ generateCode()
-    ButtonSkin.gjs.js (ESM factory)
+        ↓ generateCode({ format: 'esm' })
+    per-skin ESM factories
+        ↓ esbuild bundle (+ minify in release)
+    js/default.thm[.min_<hash>].js   (skins register on globalThis)
 ```
 
 ## Project Structure

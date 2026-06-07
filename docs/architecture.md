@@ -99,7 +99,8 @@ bin-debug/
 │   ├── blakron.core.js
 │   ├── blakron.ui.js
 │   └── blakron.game.js
-└── resource/...            # 资源树 + default.thm.json（内嵌 gjs）
+├── js/default.thm.js          # 编译后的皮肤模块（注册到 globalThis）
+└── resource/...               # 资源树 + default.thm.json（仅映射 + skinsJs 指针）
 ```
 
 **release（`bin-release/web/<timestamp>/`）—— 压缩、hash、manifest**
@@ -117,9 +118,10 @@ bin-release/web/260607010725/
 ```
 
 与 Egret 的差异：脚本是 ESM module（非经典全局脚本），启动用用户代码里的
-`createPlayer()`（非 `data-entry-class` 自举），皮肤内嵌在 `default.thm.json`
-（运行时由 `Theme` 加载，不单独出 `default.thm.js`）。`resource/`、`default.res.json`、
-`default.thm.json` 保持固定名（被源码硬编码路径引用），不加 hash。
+`createPlayer()`（非 `data-entry-class` 自举）。皮肤编译成独立的 `js/default.thm.js`
+模块（release 带 hash），`default.thm.json` 只留映射 + `skinsJs` 指针，运行时
+`Theme` 动态 `import()` 它。`resource/`、`default.res.json`、`default.thm.json`
+保持固定名（被源码硬编码路径引用），不加 hash。
 
 ---
 
@@ -166,7 +168,6 @@ export default {
 	},
 	// 可选：EXML 配置
 	exml: {
-		publishPolicy: 'gjs', // path | content | gjs | json
 		themeFile: 'resource/default.thm.json',
 	},
 };
@@ -176,16 +177,20 @@ export default {
 
 ---
 
-## 六、EXML 编译策略
+## 六、EXML 编译
 
-`config.exml.publishPolicy` 控制 EXML 文件如何写入主题文件：
+`.exml` 皮肤统一编译成**一个 ESM 模块**:
 
-| 策略      | 主题文件中的 `exmls`       | 说明                   |
-| --------- | -------------------------- | ---------------------- |
-| `path`    | 皮肤文件路径列表           | 运行时动态加载         |
-| `json`    | 同 `path`                  | 别名                   |
-| `content` | 内嵌原始 EXML 文本         | 无需额外请求           |
-| `gjs`     | 内嵌生成的 JS 工厂（IIFE） | 运行时性能最好（默认） |
+```
+resource/skins/*.exml
+   → 每个皮肤生成 ESM 工厂(import { Skin, ... } from '@blakron/ui'; export function createXxx)
+   → esbuild 打包(引擎 external,release 压缩+hash)
+   → js/default.thm.js  /  js/default.thm.min_<hash>.js
+```
 
-EXML 解析与代码生成位于 `core/exml/`，管线（`xml-parser → exml-parser →
+该模块加载时把每个工厂注册到 `globalThis['<皮肤类名>']`。`default.thm.json`
+只写 `skins`(host→类名)映射 + `skinsJs`(指向上面的模块,相对 thm.json),运行时
+`Theme` 读映射并 `import()` 该模块完成皮肤注册。产物不含原始 `.exml`。
+
+EXML 解析与代码生成位于 `core/exml/`,管线(`xml-parser → exml-parser →
 codegen`）独立于 CLI，可单独测试。

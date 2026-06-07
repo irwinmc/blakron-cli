@@ -1,6 +1,8 @@
+import * as esbuild from 'esbuild';
+import * as os from 'node:os';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { writeFile } from '../../utils/fs.js';
+import { ensureDir, writeFile } from '../../utils/fs.js';
 import { logger } from '../../utils/logger.js';
 import { compileEXML } from '../exml/index.js';
 import type { BuildContext, BuildPlugin } from '../pipeline.js';
@@ -34,15 +36,15 @@ interface ThemeData {
 }
 
 /**
- * Compiles `.exml` skin files into the theme output.
+ * Compiles `.exml` skin files into a single ESM module and rewrites the theme.
  *
- * The input theme file follows Egret conventions; the output keeps Blakron's
- * runtime shape (skin values become class names; `gjs` embeds factory code).
- * Honours the configured `publishPolicy`:
+ * Each skin becomes a real JS factory (`import { Skin, ... } from '@blakron/ui'`)
+ * bundled into `js/default.thm.js` (dev) or `js/default.thm.min_<hash>.js`
+ * (release). The module registers each factory on `globalThis` under its class
+ * name. The output `default.thm.json` keeps only the `skins` mapping plus a
+ * `skinsJs` pointer to that module, which the runtime `Theme` imports.
  *
- * - `path` / `json` — theme lists skin file paths (loaded at runtime).
- * - `content`       — theme embeds raw EXML source.
- * - `gjs`           — theme embeds generated JS factories (best runtime perf).
+ * The input theme follows Egret conventions; no `.exml` is shipped.
  */
 export function compileExml(): BuildPlugin {
 	return {
@@ -58,26 +60,83 @@ export function compileExml(): BuildPlugin {
 				return;
 			}
 
-			const policy = project.config.exml.publishPolicy;
 			const skins: CompiledSkin[] = files.map(file => ({ file, className: extractClassName(file) }));
-
-			theme.skins = remapSkins(project, theme.skins ?? {}, skins);
-			theme.exmls = buildExmls(policy, skins);
+			const skinsFile = await buildSkinsModule(ctx, skins);
+			ctx.outputs.skinsScript = `js/${skinsFile}`;
 
 			const relThemePath = project.config.exml.themeFile;
-			const outThemePath = path.join(project.outputDir, relThemePath);
-			await writeFile(outThemePath, JSON.stringify(theme, null, '\t'));
-			logger.step(`compiled ${skins.length} skin(s) → ${relThemePath} (policy: ${policy})`);
+			const outTheme: ThemeData = { ...theme };
+			delete outTheme.exmls;
+			delete outTheme.autoGenerateExmlsList;
+			outTheme.skins = remapSkins(project, theme.skins ?? {}, skins);
+			outTheme.skinsJs = toPosix(path.relative(path.dirname(relThemePath), `js/${skinsFile}`));
+
+			await writeFile(path.join(project.outputDir, relThemePath), JSON.stringify(outTheme, null, '\t'));
+			logger.step(`compiled ${skins.length} skin(s) → ${ctx.outputs.skinsScript}`);
 		},
 	};
 }
 
 /**
- * Determines which `.exml` files to compile.
- *
- * Egret semantics: when `autoGenerateExmlsList` is `false` the explicit `exmls`
- * list is authoritative; otherwise the resource directory is scanned.
+ * Generates one ESM module per skin in a temp dir, plus an index that imports
+ * and registers them, then bundles to `js/default.thm[.min_<hash>].js`.
+ * Engine packages stay external (resolved by the page import map).
  */
+async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promise<string> {
+	const { project } = ctx;
+	const jsDir = path.join(project.outputDir, 'js');
+	await ensureDir(jsDir);
+
+	const stubDir = await fs.mkdtemp(path.join(os.tmpdir(), 'blakron-skins-'));
+	try {
+		const indexLines: string[] = [];
+		await Promise.all(
+			skins.map(async (skin, i) => {
+				const code = generateSkinModule(skin);
+				await fs.writeFile(path.join(stubDir, `skin${i}.ts`), code);
+				const funcName = factoryName(skin.className);
+				indexLines.push(
+					`import { ${funcName} as s${i} } from './skin${i}.js';\n` +
+						`globalThis[${JSON.stringify(skin.className)}] = s${i};`,
+				);
+			}),
+		);
+		await fs.writeFile(path.join(stubDir, 'index.ts'), indexLines.join('\n\n') + '\n');
+
+		const isRelease = project.mode === 'release';
+		const result = await esbuild.build({
+			entryPoints: [path.join(stubDir, 'index.ts')],
+			outdir: jsDir,
+			entryNames: isRelease ? 'default.thm.min_[hash]' : 'default.thm',
+			bundle: true,
+			format: 'esm',
+			platform: 'browser',
+			target: 'es2022',
+			minify: isRelease,
+			metafile: true,
+			logLevel: 'warning',
+			external: project.enginePackages.length > 0 ? project.enginePackages : ['@blakron/ui', '@blakron/core'],
+		});
+
+		const output = Object.keys(result.metafile!.outputs).find(f => f.endsWith('.js'));
+		return path.basename(output ?? 'default.thm.js');
+	} finally {
+		await fs.rm(stubDir, { recursive: true, force: true });
+	}
+}
+
+/** Generates an ESM skin factory, returning a stub on parse failure. */
+function generateSkinModule(skin: CompiledSkin): string {
+	try {
+		return compileEXML(skin.file.contents, skin.className, { format: 'esm' });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		logger.warn(`EXML compile failed for ${skin.file.relPath}: ${message}`);
+		return `// Failed to compile ${skin.file.relPath}: ${message}\nexport function ${factoryName(skin.className)}() { return {}; }\n`;
+	}
+}
+
+/** Determines which `.exml` files to compile (honours `autoGenerateExmlsList`). */
 async function resolveExmlFiles(project: Project, theme: ThemeData): Promise<ExmlFile[]> {
 	const declared = (theme.exmls ?? []).map(e => (typeof e === 'string' ? e : e?.path)).filter(Boolean) as string[];
 
@@ -85,14 +144,13 @@ async function resolveExmlFiles(project: Project, theme: ThemeData): Promise<Exm
 		const files: ExmlFile[] = [];
 		for (const rel of declared) {
 			try {
-				files.push(await readExml(project, resolveExmlPath(project, rel)));
+				files.push(await readExmlAt(project.resourceDir, resolveExmlPath(project, rel)));
 			} catch {
 				logger.warn(`declared EXML not found, skipping: ${rel}`);
 			}
 		}
 		return files;
 	}
-
 	return collectExmlFiles(project.resourceDir);
 }
 
@@ -109,11 +167,8 @@ async function collectExmlFiles(resourceDir: string): Promise<ExmlFile[]> {
 		}
 		for (const entry of entries) {
 			const full = path.join(dir, entry.name);
-			if (entry.isDirectory()) {
-				await walk(full);
-			} else if (entry.name.endsWith('.exml')) {
-				results.push(await readExmlAt(resourceDir, full));
-			}
+			if (entry.isDirectory()) await walk(full);
+			else if (entry.name.endsWith('.exml')) results.push(await readExmlAt(resourceDir, full));
 		}
 	}
 
@@ -121,11 +176,7 @@ async function collectExmlFiles(resourceDir: string): Promise<ExmlFile[]> {
 	return results.sort((a, b) => a.relPath.localeCompare(b.relPath));
 }
 
-/**
- * Resolves an EXML path declared in the theme file. Accepts both Egret-style
- * project-root-relative paths (`resource/skins/X.exml`) and resource-relative
- * paths (`skins/X.exml`).
- */
+/** Resolves a theme-declared EXML path (project-root- or resource-relative). */
 function resolveExmlPath(project: Project, declared: string): string {
 	const normalized = declared.replace(/^\.\//, '');
 	return normalized.startsWith('resource/')
@@ -133,14 +184,10 @@ function resolveExmlPath(project: Project, declared: string): string {
 		: path.resolve(project.resourceDir, normalized);
 }
 
-async function readExml(project: Project, absolute: string): Promise<ExmlFile> {
-	return readExmlAt(project.resourceDir, absolute);
-}
-
 async function readExmlAt(resourceDir: string, absolute: string): Promise<ExmlFile> {
 	return {
 		path: absolute,
-		relPath: path.relative(resourceDir, absolute).split(path.sep).join('/'),
+		relPath: toPosix(path.relative(resourceDir, absolute)),
 		contents: await fs.readFile(absolute, 'utf-8'),
 	};
 }
@@ -148,17 +195,16 @@ async function readExmlAt(resourceDir: string, absolute: string): Promise<ExmlFi
 /** Reads the existing theme file, or returns an empty theme on miss. */
 async function loadTheme(project: Project): Promise<ThemeData> {
 	try {
-		const raw = await fs.readFile(project.themeFile!, 'utf-8');
-		return JSON.parse(raw) as ThemeData;
+		return JSON.parse(await fs.readFile(project.themeFile!, 'utf-8')) as ThemeData;
 	} catch {
-		return { skins: {}, exmls: [] };
+		return { skins: {} };
 	}
 }
 
 /**
- * Rewrites the `skins` map to Blakron's runtime form: each value becomes the
- * skin's class name. Egret path values (`resource/skins/X.exml`) are matched to
- * their compiled skin; values that are already class names pass through.
+ * Rewrites the `skins` map to class names: Egret path values
+ * (`resource/skins/X.exml`) are matched to their compiled skin; values that are
+ * already class names pass through.
  */
 function remapSkins(project: Project, skins: Record<string, string>, compiled: CompiledSkin[]): Record<string, string> {
 	const byRelPath = new Map(compiled.map(s => [s.file.relPath, s.className]));
@@ -166,10 +212,7 @@ function remapSkins(project: Project, skins: Record<string, string>, compiled: C
 
 	for (const [host, value] of Object.entries(skins)) {
 		if (/\.exml$/i.test(value) || value.includes('/')) {
-			const relPath = path
-				.relative(project.resourceDir, resolveExmlPath(project, value))
-				.split(path.sep)
-				.join('/');
+			const relPath = toPosix(path.relative(project.resourceDir, resolveExmlPath(project, value)));
 			result[host] = byRelPath.get(relPath) ?? value;
 		} else {
 			result[host] = value;
@@ -178,36 +221,17 @@ function remapSkins(project: Project, skins: Record<string, string>, compiled: C
 	return result;
 }
 
-/** Builds the output `exmls` payload for the given publish policy. */
-function buildExmls(policy: string, compiled: CompiledSkin[]): ThemeData['exmls'] {
-	switch (policy) {
-		case 'content':
-			return compiled.map(s => ({ path: s.file.relPath, content: s.file.contents }));
-		case 'gjs':
-			return compiled.map(s => ({ path: s.file.relPath, className: s.className, gjs: generateGjs(s) }));
-		case 'path':
-		case 'json':
-		default:
-			return compiled.map(s => s.file.relPath);
-	}
-}
-
 /** Reads the `class="..."` attribute, falling back to the file name. */
 function extractClassName(file: ExmlFile): string {
 	const match = file.contents.match(/class="([^"]+)"/);
 	return match ? match[1] : path.basename(file.path, '.exml');
 }
 
-/** Generates an IIFE skin factory, returning a stub on parse failure. */
-function generateGjs(skin: CompiledSkin): string {
-	try {
-		return compileEXML(skin.file.contents, skin.className, { format: 'iife' });
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		logger.warn(`EXML compile failed for ${skin.file.relPath}: ${message}`);
-		return `// Failed to compile ${skin.file.relPath}: ${message}\nfunction createSkin() { return {}; }\n`;
-	}
+/** `skins.ButtonSkin` → `createButtonSkin` (matches the EXML codegen). */
+function factoryName(className: string): string {
+	return `create${className.split('.').pop()}`;
 }
 
-export { collectExmlFiles };
-export type { ExmlFile, ThemeData };
+function toPosix(p: string): string {
+	return p.split(path.sep).join('/');
+}

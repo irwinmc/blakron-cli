@@ -78,7 +78,6 @@ export default {
 	},
 	// 可选：EXML 皮肤编译
 	exml: {
-		publishPolicy: 'gjs',
 		themeFile: 'resource/default.thm.json',
 	},
 };
@@ -86,20 +85,19 @@ export default {
 
 ### 字段对照
 
-| Egret                 | Blakron              | 说明                |
-| --------------------- | -------------------- | ------------------- |
-| `modules`             | `package.json` 依赖  | 模块改为 npm 包管理 |
-| `target.current`      | `target`             | 目前仅支持 `html5`  |
-| —                     | `entry`              | 默认 `src/Main.ts`  |
-| `data-content-width`  | `stage.width`        | 舞台宽度            |
-| `data-content-height` | `stage.height`       | 舞台高度            |
-| `data-scale-mode`     | `stage.scaleMode`    | 缩放模式            |
-| `data-orientation`    | `stage.orientation`  | 屏幕方向            |
-| `data-frame-rate`     | `stage.frameRate`    | 帧率                |
-| —                     | `stage.background`   | 背景色              |
-| —                     | `output.dir`         | 输出目录            |
-| —                     | `exml.publishPolicy` | EXML 输出策略       |
-| —                     | `exml.themeFile`     | 主题文件路径        |
+| Egret                 | Blakron             | 说明                |
+| --------------------- | ------------------- | ------------------- |
+| `modules`             | `package.json` 依赖 | 模块改为 npm 包管理 |
+| `target.current`      | `target`            | 目前仅支持 `html5`  |
+| —                     | `entry`             | 默认 `src/Main.ts`  |
+| `data-content-width`  | `stage.width`       | 舞台宽度            |
+| `data-content-height` | `stage.height`      | 舞台高度            |
+| `data-scale-mode`     | `stage.scaleMode`   | 缩放模式            |
+| `data-orientation`    | `stage.orientation` | 屏幕方向            |
+| `data-frame-rate`     | `stage.frameRate`   | 帧率                |
+| —                     | `stage.background`  | 背景色              |
+| —                     | `output.dir`        | 输出目录            |
+| —                     | `exml.themeFile`    | 主题文件路径        |
 
 ---
 
@@ -139,12 +137,12 @@ class Main extends Sprite { ... }
 
 EXML 文件格式完全兼容，无需修改。但编译方式和输出格式有变化：
 
-| 维度     | Egret                   | Blakron                                     |
-| -------- | ----------------------- | ------------------------------------------- |
-| 编译器   | 内嵌在 `tools/lib/eui/` | CLI 内置编译管线                            |
-| 编译时机 | `egret build` 时编译    | `blakron build` 时自动编译                  |
-| 输出策略 | 固定格式                | 可配置：`path` / `content` / `gjs` / `json` |
-| 命名空间 | `eui:*` / `egret:*`     | 相同，兼容                                  |
+| 维度     | Egret                   | Blakron                         |
+| -------- | ----------------------- | ------------------------------- |
+| 编译器   | 内嵌在 `tools/lib/eui/` | CLI 内置编译管线                |
+| 编译时机 | `egret build` 时编译    | `blakron build` 时自动编译      |
+| 输出策略 | 固定格式                | 编译成 `js/default.thm.js` 模块 |
+| 命名空间 | `eui:*` / `egret:*`     | 相同，兼容                      |
 
 EXML 中的命名空间前缀会自动映射到对应的 Blakron 包：
 
@@ -161,7 +159,6 @@ EXML 中的命名空间前缀会自动映射到对应的 Blakron 包：
 export default {
 	// ...其他配置
 	exml: {
-		publishPolicy: 'gjs', // 推荐：编译为 JS，性能最好
 		themeFile: 'resource/default.thm.json',
 	},
 };
@@ -196,9 +193,9 @@ export default {
 }
 ```
 
-**输出可以不同**：构建后写入 `bin-debug/` 的 `default.thm.json` 会把 `skins` 路径值
-统一解析为皮肤类名，并按 `publishPolicy`（默认 `gjs`）内嵌皮肤工厂代码，供运行时
-直接加载。源文件无需改动。
+**输出可以不同**：构建后 `bin-debug/` 的 `default.thm.json` 会把 `skins` 路径值
+统一解析为皮肤类名，并写入 `skinsJs` 指针；所有皮肤编译成独立的
+`js/default.thm.js` 模块（release 带 hash），运行时 `Theme` 加载它。源文件无需改动。
 
 ---
 

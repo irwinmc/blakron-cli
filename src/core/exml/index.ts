@@ -68,7 +68,7 @@ import type { SkinIR } from './ast.js';
  *
  * @param source EXML source text
  * @param className Optional class name (used for factory function name)
- * @param options Code generation options (format: 'esm' | 'iife')
+ * @param options Code generation options
  * @returns Generated JS source string
  */
 export function compileEXML(source: string, className?: string, options?: CodeGenOptions): string {

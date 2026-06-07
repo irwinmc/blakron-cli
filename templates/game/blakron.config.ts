@@ -11,7 +11,6 @@ export default {
 		background: '#000000',
 	},
 	exml: {
-		publishPolicy: 'gjs',
 		themeFile: 'resource/default.thm.json',
 	},
 };
