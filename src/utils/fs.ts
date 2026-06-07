@@ -12,11 +12,9 @@ export async function copyDir(src: string, dest: string, filter?: (name: string)
 		const srcPath = path.join(src, entry.name);
 		const destPath = path.join(dest, entry.name);
 		if (entry.isDirectory()) {
-			await copyDir(srcPath, destPath);
-		} else {
-			if (!filter || filter(entry.name)) {
-				await fs.copyFile(srcPath, destPath);
-			}
+			await copyDir(srcPath, destPath, filter);
+		} else if (!filter || filter(entry.name)) {
+			await fs.copyFile(srcPath, destPath);
 		}
 	}
 }
