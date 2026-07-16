@@ -5,6 +5,23 @@ import { loadConfig, type ProjectConfig } from './config.js';
 export type BuildMode = 'development' | 'release';
 
 /**
+ * A project-defined EXML namespace (Egret's `xmlns:game="game.*"` convention).
+ *
+ * `specifier` is the virtual module specifier used in generated `import`
+ * statements (e.g. `#ns/game`); it is resolved via an HTML import map to the
+ * bundled chunk produced from `entry`, so the app bundle and the skins bundle
+ * both import the same module instance.
+ */
+export interface CustomNamespace {
+	/** The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`). */
+	readonly prefix: string;
+	/** Virtual module specifier used in generated `import` statements. */
+	readonly specifier: string;
+	/** Absolute path to the barrel file exporting every class in this namespace. */
+	readonly entry: string;
+}
+
+/**
  * Resolved view of a Blakron project.
  *
  * Loads `blakron.config.ts`, then resolves every project path to an absolute
@@ -37,6 +54,8 @@ export interface Project {
 	 * Each is bundled into its own chunk and wired up via an HTML import map.
 	 */
 	readonly enginePackages: string[];
+	/** Project-defined EXML namespaces, resolved from `config.exml.namespaces`. */
+	readonly customNamespaces: CustomNamespace[];
 }
 
 /** Base output folder names, used by both build and clean. */
@@ -61,7 +80,21 @@ export async function loadProject(mode: BuildMode): Promise<Project> {
 		resourceDir: path.resolve(root, 'resource'),
 		themeFile: config.exml ? path.resolve(root, config.exml.themeFile) : undefined,
 		enginePackages: detectEnginePackages(root),
+		customNamespaces: resolveCustomNamespaces(root, config.exml?.namespaces),
 	};
+}
+
+/** The specifier prefix used for project-defined EXML namespaces (kept out of npm's `@scope` space). */
+const NAMESPACE_SPECIFIER_PREFIX = '#ns/';
+
+/** Resolves `config.exml.namespaces` into `CustomNamespace` entries with absolute barrel paths. */
+function resolveCustomNamespaces(root: string, namespaces: Record<string, string> | undefined): CustomNamespace[] {
+	if (!namespaces) return [];
+	return Object.entries(namespaces).map(([prefix, entry]) => ({
+		prefix,
+		specifier: `${NAMESPACE_SPECIFIER_PREFIX}${prefix}`,
+		entry: path.resolve(root, entry),
+	}));
 }
 
 /** Reads `@blakron/*` runtime dependencies (excluding the CLI) from package.json. */

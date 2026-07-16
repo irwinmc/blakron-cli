@@ -15,6 +15,17 @@ export interface StageConfig {
 
 export interface ExmlConfig {
 	themeFile: string;
+	/**
+	 * Custom EXML namespaces for project-defined components, matching Egret's
+	 * `xmlns:game="game.*"` convention. Maps the namespace prefix used in EXML
+	 * (e.g. `game`) to a barrel file that exports every class referenced under
+	 * that namespace (e.g. `src/ui/index.ts` re-exporting `HeroNarrowIR`, etc.).
+	 *
+	 * Each barrel is bundled into its own chunk and wired into both the app and
+	 * skins bundles via an import map, so a class referenced from EXML and from
+	 * game code resolves to the same module instance (no duplicate class identity).
+	 */
+	namespaces?: Record<string, string>;
 }
 
 export interface OutputConfig {

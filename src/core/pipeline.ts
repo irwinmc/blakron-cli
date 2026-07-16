@@ -21,6 +21,22 @@ export interface BuildContext {
 		skinsScript?: string;
 		/** Engine import-map: package specifier → chunk path relative to output dir. */
 		engine: Record<string, string>;
+		/**
+		 * Every source file bundled into a custom-namespace chunk (see
+		 * `compile-custom-namespaces.ts`), keyed by its extensionless absolute
+		 * path (see `normalizeModuleKey` in `namespace-external-plugin.ts`) and
+		 * mapped to that namespace's virtual specifier (e.g. `#ns/game`).
+		 *
+		 * Populated from esbuild's `metafile.outputs[x].inputs` — the exact set
+		 * of files a chunk inlined, not a guess. Two consumers rely on this:
+		 * `compile-source.ts` excludes these files from its per-file dev output
+		 * (re-emitting them as separate entry points would bundle a second,
+		 * distinct copy of the same classes), and `namespaceModuleExternalPlugin`
+		 * rewrites any import resolving to one of these paths — even a relative
+		 * import that bypasses the namespace's barrel file — to the matching
+		 * specifier instead of inlining it.
+		 */
+		namespaceModules: Map<string, string>;
 	};
 	/** Cleanup callbacks registered by long-lived plugins (watchers, contexts). */
 	readonly disposers: Array<() => Promise<void> | void>;
@@ -42,7 +58,7 @@ export function createContext(
 		sourcemap: options.sourcemap ?? false,
 		analyze: options.analyze ?? false,
 		watch: options.watch ?? false,
-		outputs: { engine: {} },
+		outputs: { engine: {}, namespaceModules: new Map() },
 		disposers: [],
 	};
 }

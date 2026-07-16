@@ -216,3 +216,45 @@ describe('Bindings', () => {
 		expect(code).toContain('Binding');
 	});
 });
+
+// ── Custom namespaces ────────────────────────────────────────────────
+
+const CUSTOM_NS_EXML = `<?xml version="1.0" encoding="utf-8"?>
+<eui:Skin class="game.ui.AdventurePosIRSkin" width="90" height="120" xmlns:eui="http://ns.egret.com/eui" xmlns:game="game.*">
+	<eui:Group width="90" height="120">
+		<game:HeroNarrowIR id="heroIR" skinName="game.widget.HeroNarrowIRSkin"/>
+		<eui:Label id="lblHp" text="100%"/>
+	</eui:Group>
+</eui:Skin>`;
+
+const CUSTOM_NAMESPACES = [{ prefix: 'game', specifier: '#ns/game' }];
+
+describe('Custom namespaces', () => {
+	it('resolves a prefixed tag to the configured namespace specifier', () => {
+		const info = lookupComponent('game:HeroNarrowIR', CUSTOM_NAMESPACES);
+		expect(info).toEqual({ module: '#ns/game' });
+	});
+
+	it('drops an unresolved custom-namespace tag without a matching config entry', () => {
+		const ir = parseEXML(CUSTOM_NS_EXML, 'game.ui.AdventurePosIRSkin');
+		const group = ir.children[0];
+		// Only <eui:Label> resolves; <game:HeroNarrowIR> is unknown without config.
+		expect(group.children).toHaveLength(1);
+		expect(group.children[0].className).toBe('Label');
+		expect(ir.unresolvedTags).toContain('game:HeroNarrowIR');
+	});
+
+	it('resolves and imports a custom-namespace tag when the namespace is configured', () => {
+		const ir = parseEXML(CUSTOM_NS_EXML, 'game.ui.AdventurePosIRSkin', CUSTOM_NAMESPACES);
+		const group = ir.children[0];
+		expect(group.children).toHaveLength(2);
+		expect(ir.unresolvedTags).toHaveLength(0);
+		expect(ir.imports.get('HeroNarrowIR')).toBe('#ns/game');
+	});
+
+	it('generates an import from the namespace specifier', () => {
+		const code = compileEXML(CUSTOM_NS_EXML, 'game.ui.AdventurePosIRSkin', { customNamespaces: CUSTOM_NAMESPACES });
+		expect(code).toContain('from "#ns/game"');
+		expect(code).toContain('new HeroNarrowIR()');
+	});
+});

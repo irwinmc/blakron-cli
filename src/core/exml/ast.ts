@@ -160,4 +160,10 @@ export interface SkinIR {
 	readonly states: StateDef[];
 	/** Inline declarations (non-visual) */
 	readonly declarations: SkinNode[];
+	/**
+	 * Tag names that could not be resolved to a component or a project-defined
+	 * namespace (see `NamespaceModule`). These are silently dropped from the
+	 * generated skin, so callers should surface them as build warnings.
+	 */
+	readonly unresolvedTags: string[];
 }

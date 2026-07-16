@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { ensureDir } from '../../utils/fs.js';
 import { logger } from '../../utils/logger.js';
+import { namespaceModuleExternalPlugin, normalizeModuleKey } from '../namespace-external-plugin.js';
 import type { BuildContext, BuildPlugin } from '../pipeline.js';
 import type { Project } from '../project.js';
 
@@ -40,7 +41,11 @@ const COMMON: esbuild.BuildOptions = {
 /** Per-file output preserving the source tree (development). */
 async function buildDevelopment(ctx: BuildContext): Promise<void> {
 	const { project } = ctx;
-	const sources = await collectSources(project.srcDir);
+	const allSources = await collectSources(project.srcDir);
+	// Files already bundled into a custom-namespace chunk (compile-custom-namespaces.ts)
+	// must not also become their own dev entry point — that would emit a second,
+	// distinct copy of the same classes instead of resolving to the shared chunk.
+	const sources = allSources.filter(file => !ctx.outputs.namespaceModules.has(normalizeModuleKey(file)));
 	const entryPoints = sources.length > 0 ? sources : [project.entry];
 
 	const options: esbuild.BuildOptions = {
@@ -51,7 +56,8 @@ async function buildDevelopment(ctx: BuildContext): Promise<void> {
 		entryNames: '[dir]/[name]',
 		splitting: true,
 		sourcemap: ctx.sourcemap,
-		external: project.enginePackages,
+		external: [...project.enginePackages, ...project.customNamespaces.map(ns => ns.specifier)],
+		plugins: [namespaceModuleExternalPlugin(ctx.outputs.namespaceModules)],
 		define: defines(false),
 	};
 
@@ -77,7 +83,8 @@ async function buildRelease(ctx: BuildContext): Promise<void> {
 		minify: true,
 		sourcemap: ctx.sourcemap,
 		metafile: true,
-		external: project.enginePackages,
+		external: [...project.enginePackages, ...project.customNamespaces.map(ns => ns.specifier)],
+		plugins: [namespaceModuleExternalPlugin(ctx.outputs.namespaceModules)],
 		define: defines(true),
 	});
 

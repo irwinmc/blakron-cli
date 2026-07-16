@@ -15,6 +15,17 @@ export interface ComponentInfo {
 	isArray?: boolean;
 }
 
+/**
+ * A project-defined EXML namespace, matching Egret's `xmlns:game="game.*"`
+ * convention (see `ProjectConfig.exml.namespaces` in `@blakron/cli`).
+ */
+export interface NamespaceModule {
+	/** The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`). */
+	readonly prefix: string;
+	/** Virtual module specifier resolved via the HTML import map. */
+	readonly specifier: string;
+}
+
 // ── Namespace mappings ───────────────────────────────────────────────
 
 /** Map XML namespace prefixes to module import paths */
@@ -108,36 +119,56 @@ const COMPONENTS: Record<string, ComponentInfo> = {
 /**
  * Look up a component by its tag name.
  *
+ * Project-defined namespaces (`customNamespaces`) take priority when the
+ * tag's prefix matches one: this mirrors Egret's `xmlns:game="game.*"`
+ * convention, where the prefix alone — not the declared xmlns URI — decides
+ * which module a tag resolves to (the same is true of the built-in `eui`/
+ * `egret` prefixes below).
+ *
  * @param tagName - Full tag name possibly with prefix (e.g. "eui:Button")
+ * @param customNamespaces - Project-defined namespaces from `blakron.config.ts`
  * @returns Component info or null if not found
  */
-export function lookupComponent(tagName: string): ComponentInfo | null {
-	// Strip namespace prefix if present
-	const local = tagName.includes(':') ? tagName.split(':').pop()! : tagName;
+export function lookupComponent(
+	tagName: string,
+	customNamespaces: readonly NamespaceModule[] = [],
+): ComponentInfo | null {
+	const prefix = tagName.includes(':') ? tagName.split(':')[0] : '';
+	if (prefix) {
+		const custom = customNamespaces.find(ns => ns.prefix === prefix);
+		if (custom) return { module: custom.specifier };
+	}
+
+	const local = localName(tagName);
 	return COMPONENTS[local] ?? null;
 }
 
 /**
  * Get the default property for a component.
  */
-export function getDefaultProperty(tagName: string): string | undefined {
-	const info = lookupComponent(tagName);
+export function getDefaultProperty(
+	tagName: string,
+	customNamespaces: readonly NamespaceModule[] = [],
+): string | undefined {
+	const info = lookupComponent(tagName, customNamespaces);
 	return info?.defaultProperty;
 }
 
 /**
  * Resolve a tag name to its import module path.
  */
-export function resolveModule(tagName: string): string | null {
+export function resolveModule(tagName: string, customNamespaces: readonly NamespaceModule[] = []): string | null {
 	// Check for namespace prefix first
 	if (tagName.includes(':')) {
 		const [prefix] = tagName.split(':');
+		const custom = customNamespaces.find(ns => ns.prefix === prefix);
+		if (custom) return custom.specifier;
 		const modulePath = NAMESPACE_MODULES[prefix];
 		if (modulePath) return modulePath;
 	}
 
 	// Fall back to component registry
-	const info = lookupComponent(tagName);
+	const info = lookupComponent(tagName, customNamespaces);
 	return info?.module ?? null;
 }
 

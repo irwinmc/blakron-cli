@@ -4,7 +4,14 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import type { Project } from './project.js';
 import { createContext, runPipeline, disposeContext, type BuildContext } from './pipeline.js';
-import { compileExml, compileEngine, compileSource, generateHtml, copyAssets } from './plugins/index.js';
+import {
+	compileExml,
+	compileEngine,
+	compileCustomNamespaces,
+	compileSource,
+	generateHtml,
+	copyAssets,
+} from './plugins/index.js';
 import { logger } from '../utils/logger.js';
 
 export interface DevServerOptions {
@@ -22,7 +29,14 @@ export interface DevServerOptions {
  */
 export async function startDevServer(project: Project, options: DevServerOptions): Promise<void> {
 	const ctx = createContext(project, { sourcemap: options.sourcemap, watch: true });
-	await runPipeline(ctx, [compileExml(), compileEngine(), compileSource(), generateHtml(), copyAssets()]);
+	await runPipeline(ctx, [
+		compileExml(),
+		compileEngine(),
+		compileCustomNamespaces(),
+		compileSource(),
+		generateHtml(),
+		copyAssets(),
+	]);
 
 	watchResources(project, ctx);
 	const server = startHttpServer(project, options.port);

@@ -4,7 +4,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { ensureDir, writeFile } from '../../utils/fs.js';
 import { logger } from '../../utils/logger.js';
-import { compileEXML } from '../exml/index.js';
+import { parseToIR, generateCode } from '../exml/index.js';
 import type { BuildContext, BuildPlugin } from '../pipeline.js';
 import type { Project } from '../project.js';
 
@@ -87,12 +87,14 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 	const jsDir = path.join(project.outputDir, 'js');
 	await ensureDir(jsDir);
 
+	const customNamespaces = project.customNamespaces.map(ns => ({ prefix: ns.prefix, specifier: ns.specifier }));
+
 	const stubDir = await fs.mkdtemp(path.join(os.tmpdir(), 'blakron-skins-'));
 	try {
 		const indexLines: string[] = [];
 		await Promise.all(
 			skins.map(async (skin, i) => {
-				const code = generateSkinModule(skin);
+				const code = generateSkinModule(skin, customNamespaces);
 				await fs.writeFile(path.join(stubDir, `skin${i}.ts`), code);
 				const funcName = factoryName(skin.className);
 				indexLines.push(
@@ -104,6 +106,8 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 		await fs.writeFile(path.join(stubDir, 'index.ts'), indexLines.join('\n\n') + '\n');
 
 		const isRelease = project.mode === 'release';
+		const engineExternal =
+			project.enginePackages.length > 0 ? project.enginePackages : ['@blakron/ui', '@blakron/core'];
 		const result = await esbuild.build({
 			entryPoints: [path.join(stubDir, 'index.ts')],
 			outdir: jsDir,
@@ -115,7 +119,7 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 			minify: isRelease,
 			metafile: true,
 			logLevel: 'warning',
-			external: project.enginePackages.length > 0 ? project.enginePackages : ['@blakron/ui', '@blakron/core'],
+			external: [...engineExternal, ...project.customNamespaces.map(ns => ns.specifier)],
 		});
 
 		const output = Object.keys(result.metafile!.outputs).find(f => f.endsWith('.js'));
@@ -126,9 +130,17 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 }
 
 /** Generates an ESM skin factory, returning a stub on parse failure. */
-function generateSkinModule(skin: CompiledSkin): string {
+function generateSkinModule(
+	skin: CompiledSkin,
+	customNamespaces: readonly { prefix: string; specifier: string }[],
+): string {
 	try {
-		return compileEXML(skin.file.contents, skin.className, { format: 'esm' });
+		const ir = parseToIR(skin.file.contents, skin.className, customNamespaces);
+		if (ir.unresolvedTags.length > 0) {
+			const tags = [...new Set(ir.unresolvedTags)].join(', ');
+			logger.warn(`${skin.file.relPath}: unresolved tag(s) dropped from skin: ${tags}`);
+		}
+		return generateCode(ir, { format: 'esm' });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.warn(`EXML compile failed for ${skin.file.relPath}: ${message}`);

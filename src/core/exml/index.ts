@@ -47,7 +47,7 @@ export {
 	isPropertyNode,
 	parsePropertyNode,
 } from './registry.js';
-export type { ComponentInfo } from './registry.js';
+export type { ComponentInfo, NamespaceModule } from './registry.js';
 
 // ── EXML Parser ──────────────────────────────────────────────────────
 export { parseEXML, parseSkinRoot } from './exml-parser.js';
@@ -61,18 +61,24 @@ export type { CodeGenOptions } from './codegen.js';
 import { parseEXML } from './exml-parser.js';
 import { generateCode } from './codegen.js';
 import type { CodeGenOptions } from './codegen.js';
+import type { NamespaceModule } from './registry.js';
 import type { SkinIR } from './ast.js';
+
+export interface CompileExmlOptions extends CodeGenOptions {
+	/** Project-defined EXML namespaces (see `ProjectConfig.exml.namespaces`). */
+	customNamespaces?: readonly NamespaceModule[];
+}
 
 /**
  * Compile an EXML source string directly to JavaScript.
  *
  * @param source EXML source text
  * @param className Optional class name (used for factory function name)
- * @param options Code generation options
+ * @param options Code generation options, plus project-defined namespaces
  * @returns Generated JS source string
  */
-export function compileEXML(source: string, className?: string, options?: CodeGenOptions): string {
-	const ir = parseEXML(source, className);
+export function compileEXML(source: string, className?: string, options?: CompileExmlOptions): string {
+	const ir = parseEXML(source, className, options?.customNamespaces ?? []);
 	return generateCode(ir, options);
 }
 
@@ -81,8 +87,13 @@ export function compileEXML(source: string, className?: string, options?: CodeGe
  *
  * @param source EXML source text
  * @param className Optional class name
+ * @param customNamespaces Project-defined EXML namespaces
  * @returns SkinIR intermediate representation
  */
-export function parseToIR(source: string, className?: string): SkinIR {
-	return parseEXML(source, className);
+export function parseToIR(
+	source: string,
+	className?: string,
+	customNamespaces: readonly NamespaceModule[] = [],
+): SkinIR {
+	return parseEXML(source, className, customNamespaces);
 }

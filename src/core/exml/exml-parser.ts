@@ -7,14 +7,8 @@
 
 import type { XElement, XNode } from './xml-parser.js';
 import { parseXML, filterElements, getTextContent } from './xml-parser.js';
-import {
-	lookupComponent,
-	resolveModule,
-	localName,
-	isPropertyNode,
-	parsePropertyNode,
-	getDefaultProperty,
-} from './registry.js';
+import { lookupComponent, localName, isPropertyNode, parsePropertyNode } from './registry.js';
+import type { NamespaceModule } from './registry.js';
 import type {
 	SkinIR,
 	SkinNode,
@@ -32,9 +26,13 @@ import type {
 /**
  * Parse an EXML source string into a SkinIR.
  */
-export function parseEXML(source: string, className?: string): SkinIR {
+export function parseEXML(
+	source: string,
+	className?: string,
+	customNamespaces: readonly NamespaceModule[] = [],
+): SkinIR {
 	const root = parseXML(source);
-	const ir = parseSkinRoot(root);
+	const ir = parseSkinRoot(root, customNamespaces);
 	if (className) {
 		(ir as { className: string }).className = className;
 	}
@@ -44,8 +42,8 @@ export function parseEXML(source: string, className?: string): SkinIR {
 /**
  * Parse an already-parsed XML root element into a SkinIR.
  */
-export function parseSkinRoot(root: XElement): SkinIR {
-	const ctx = new ParseContext();
+export function parseSkinRoot(root: XElement, customNamespaces: readonly NamespaceModule[] = []): SkinIR {
+	const ctx = new ParseContext(customNamespaces);
 	ctx.processRoot(root);
 	return ctx.toIR();
 }
@@ -63,8 +61,12 @@ class ParseContext {
 	states: StateDef[] = [];
 	/** Declarations */
 	declarations: SkinNode[] = [];
+	/** Tag names that could not be resolved to a component or namespace */
+	unresolvedTags: string[] = [];
 	/** Counter for generating unique variable names */
 	private varCounter = 0;
+
+	constructor(private readonly customNamespaces: readonly NamespaceModule[]) {}
 
 	/** Process the root <eui:Skin> element */
 	processRoot(root: XElement): void {
@@ -223,10 +225,12 @@ class ParseContext {
 	/** Parse a component XML element into a SkinNode */
 	private parseNode(el: XElement): SkinNode | null {
 		const cls = localName(el.name);
-		const info = lookupComponent(el.name);
+		const info = lookupComponent(el.name, this.customNamespaces);
 
 		if (!info) {
-			// Unknown component — skip with warning
+			// Unknown component — dropped from the generated skin; the caller
+			// (see `unresolvedTags`) is responsible for surfacing this as a warning.
+			this.unresolvedTags.push(el.name);
 			return null;
 		}
 
@@ -436,6 +440,7 @@ class ParseContext {
 			propertyChildren: [],
 			states: this.states,
 			declarations: this.declarations,
+			unresolvedTags: this.unresolvedTags,
 		};
 	}
 }
