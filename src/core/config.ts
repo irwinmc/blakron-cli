@@ -5,15 +5,38 @@ import { ConfigError } from './errors.js';
 export type BuildTarget = 'html5';
 
 export interface StageConfig {
+	/**
+	 * Stage width in points.
+	 */
 	width: number;
+	/**
+	 * Stage height in points.
+	 */
 	height: number;
+	/**
+	 * Egret-style scale mode: `showAll` | `noScale` | `exactFit` | `noBorder` |
+	 * `fixedHeight` | `fixedWidth` | `fixedNarrow` | `fixedWide`.
+	 */
 	scaleMode: string;
+	/**
+	 * Preferred device orientation (e.g. `auto`, `portrait`, `landscape`).
+	 */
 	orientation: string;
+	/**
+	 * Target frame rate, in frames per second.
+	 */
 	frameRate: number;
+	/**
+	 * Page background color (CSS color string, e.g. `#000000`).
+	 */
 	background: string;
 }
 
 export interface ExmlConfig {
+	/**
+	 * Path to the Egret-style theme file (e.g. `resource/default.thm.json`),
+	 * relative to the project root.
+	 */
 	themeFile: string;
 	/**
 	 * Custom EXML namespaces for project-defined components, matching Egret's
@@ -29,14 +52,35 @@ export interface ExmlConfig {
 }
 
 export interface OutputConfig {
+	/**
+	 * Development build output directory, relative to the project root
+	 * (default: `bin-debug`). Release builds always go to
+	 * `bin-release/web/<timestamp>` regardless of this setting.
+	 */
 	dir: string;
 }
 
 export interface ProjectConfig {
+	/**
+	 * Build target platform. Only `html5` is currently supported.
+	 */
 	target: BuildTarget;
+	/**
+	 * Path to the entry source file, relative to the project root
+	 * (default: `src/Main.ts`).
+	 */
 	entry: string;
+	/**
+	 * Development build output settings.
+	 */
 	output: OutputConfig;
+	/**
+	 * Stage / canvas configuration.
+	 */
 	stage: StageConfig;
+	/**
+	 * EXML compilation settings. Omit to disable EXML support entirely.
+	 */
 	exml?: ExmlConfig;
 }
 
@@ -65,6 +109,14 @@ const VALID_SCALE_MODES = [
 	'fixedWide',
 ] as const;
 
+/**
+ * Loads and validates `blakron.config.ts` (or `.js`) from the current working
+ * directory, merging it over `DEFAULTS`. Falls back to `DEFAULTS` entirely
+ * when no config file is present.
+ *
+ * @returns The validated project configuration
+ * @throws {ConfigError} If `stage.frameRate`, `stage.scaleMode`, or `entry` is invalid
+ */
 export async function loadConfig(): Promise<ProjectConfig> {
 	const configPath = path.resolve('blakron.config.ts');
 	const jsConfigPath = path.resolve('blakron.config.js');
@@ -72,7 +124,8 @@ export async function loadConfig(): Promise<ProjectConfig> {
 	let config: ProjectConfig;
 
 	if ((await exists(configPath)) || (await exists(jsConfigPath))) {
-		// Dynamic import works for both .js and pre-compiled .ts (via tsx/ts-node)
+		// Dynamic import of `blakron.config.ts` relies on Node's built-in
+		// TypeScript type-stripping support (no `tsx`/`ts-node` involved).
 		const mod = await import((await exists(configPath)) ? configPath : jsConfigPath);
 		const userConfig: ProjectConfig = mod.default ?? mod;
 		config = { ...DEFAULTS, ...userConfig, stage: { ...DEFAULTS.stage, ...userConfig.stage } };

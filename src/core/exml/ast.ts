@@ -7,30 +7,44 @@
 
 // ── Value types ──────────────────────────────────────────────────────
 
-/** A literal value (string, number, boolean, null) */
+/**
+ * A literal value (string, number, boolean, null).
+ */
 export interface LiteralValue {
 	readonly type: 'literal';
 	readonly value: string | number | boolean | null;
 }
 
-/** A percent value (e.g. width="100%") */
+/**
+ * A percent value (e.g. `width="100%"`).
+ */
 export interface PercentValue {
 	readonly type: 'percent';
-	/** The numeric portion (e.g. 100) */
+	/**
+	 * The numeric portion (e.g. `100`).
+	 */
 	readonly value: number;
 }
 
-/** A binding expression (e.g. "{data.name}") */
+/**
+ * A binding expression (e.g. `"{data.name}"`).
+ */
 export interface BindingValue {
 	readonly type: 'binding';
-	/** The expression string (e.g. "data.name") */
+	/**
+	 * The expression string (e.g. `"data.name"`).
+	 */
 	readonly expression: string;
 }
 
-/** A reference to a skin part by id (e.g. for AddItems target) */
+/**
+ * A reference to a skin part by id (e.g. for an `AddItems` target).
+ */
 export interface RefValue {
 	readonly type: 'ref';
-	/** The variable name in generated code */
+	/**
+	 * The variable name in generated code.
+	 */
 	readonly varName: string;
 }
 
@@ -39,43 +53,75 @@ export type PropertyValue = LiteralValue | PercentValue | BindingValue | RefValu
 // ── Property assignment ──────────────────────────────────────────────
 
 export interface PropertyAssignment {
-	/** Property name */
+	/**
+	 * Property name.
+	 */
 	readonly name: string;
-	/** State name (empty = default, e.g. "up" from "label.up") */
+	/**
+	 * State name (empty = default, e.g. "up" from "label.up").
+	 */
 	readonly state: string;
-	/** The value to assign */
+	/**
+	 * The value to assign.
+	 */
 	readonly value: PropertyValue;
 }
 
 // ── Node IR ──────────────────────────────────────────────────────────
 
-/** A component instance in the skin */
+/**
+ * A component instance in the skin.
+ */
 export interface SkinNode {
-	/** Tag/class name (without namespace, e.g. "Button") */
+	/**
+	 * Tag/class name (without namespace, e.g. "Button").
+	 */
 	readonly className: string;
-	/** Module to import from (e.g. "@blakron/ui") */
+	/**
+	 * Module to import from (e.g. "@blakron/ui").
+	 */
 	readonly module: string;
-	/** Variable name in generated code (e.g. "btn1") */
+	/**
+	 * Variable name in generated code (e.g. "btn1").
+	 */
 	readonly varName: string;
-	/** ID (skin part name, e.g. "myBtn") or undefined */
+	/**
+	 * ID (skin part name, e.g. "myBtn") or undefined.
+	 */
 	readonly id?: string;
-	/** Properties to set on this node */
+	/**
+	 * Properties to set on this node.
+	 */
 	readonly properties: PropertyAssignment[];
-	/** Children assigned to default property */
+	/**
+	 * Children assigned to the default property.
+	 */
 	readonly children: SkinNode[];
-	/** Children assigned to named properties (property nodes) */
+	/**
+	 * Children assigned to named properties (property nodes).
+	 */
 	readonly propertyChildren: PropertyChild[];
-	/** includeIn state names (only in these states) */
+	/**
+	 * `includeIn` state names (only present in these states).
+	 */
 	readonly includeIn: string[];
-	/** excludeFrom state names (excluded from these states) */
+	/**
+	 * `excludeFrom` state names (excluded from these states).
+	 */
 	readonly excludeFrom: string[];
 }
 
-/** A child assigned to a specific property (via property node syntax) */
+/**
+ * A child assigned to a specific property (via property node syntax).
+ */
 export interface PropertyChild {
-	/** Property name */
+	/**
+	 * Property name.
+	 */
 	readonly propertyName: string;
-	/** The child node(s) — usually a single node or text content */
+	/**
+	 * The child node(s) — usually a single node or text content.
+	 */
 	readonly nodes: (SkinNode | string)[];
 }
 
@@ -83,33 +129,53 @@ export interface PropertyChild {
 
 export interface StateAddItems {
 	readonly type: 'AddItems';
-	/** ID of the item to add */
+	/**
+	 * ID of the item to add.
+	 */
 	readonly targetId: string;
-	/** ID of the destination container */
+	/**
+	 * ID of the destination container.
+	 */
 	readonly destinationId: string;
-	/** Insertion index (-1 = append) */
+	/**
+	 * Insertion index (-1 = append).
+	 */
 	readonly position: number;
-	/** Property name on destination */
+	/**
+	 * Property name on the destination.
+	 */
 	readonly propertyName: string;
 }
 
 export interface StateSetProperty {
 	readonly type: 'SetProperty';
-	/** ID of the target (empty = skin itself) */
+	/**
+	 * ID of the target (empty = skin itself).
+	 */
 	readonly targetId: string;
-	/** Property name */
+	/**
+	 * Property name.
+	 */
 	readonly name: string;
-	/** Value to set */
+	/**
+	 * Value to set.
+	 */
 	readonly value: PropertyValue;
 }
 
 export interface StateSetStateProperty {
 	readonly type: 'SetStateProperty';
-	/** Property name */
+	/**
+	 * Property name.
+	 */
 	readonly name: string;
-	/** Value to set */
+	/**
+	 * Value to set.
+	 */
 	readonly value: PropertyValue;
-	/** State that triggers this */
+	/**
+	 * State that triggers this.
+	 */
 	readonly stateName: string;
 }
 
@@ -118,47 +184,79 @@ export type StateOverride = StateAddItems | StateSetProperty | StateSetStateProp
 // ── State definition ─────────────────────────────────────────────────
 
 export interface StateDef {
-	/** State name (e.g. "up", "down", "disabled") */
+	/**
+	 * State name (e.g. "up", "down", "disabled").
+	 */
 	readonly name: string;
-	/** State groups this state belongs to */
+	/**
+	 * State groups this state belongs to.
+	 */
 	readonly stateGroups: string[];
-	/** State-specific overrides */
+	/**
+	 * State-specific overrides.
+	 */
 	readonly overrides: StateOverride[];
 }
 
 // ── Binding definition ───────────────────────────────────────────────
 
 export interface BindingDef {
-	/** Target variable name */
+	/**
+	 * Target variable name.
+	 */
 	readonly targetVar: string;
-	/** Target property name */
+	/**
+	 * Target property name.
+	 */
 	readonly targetProp: string;
-	/** Binding expression string */
+	/**
+	 * Binding expression string.
+	 */
 	readonly expression: string;
 }
 
 // ── Skin IR (top-level) ─────────────────────────────────────────────
 
 export interface SkinIR {
-	/** Skin class name (e.g. "MySkin") */
+	/**
+	 * Skin class name (e.g. "MySkin").
+	 */
 	readonly className: string;
-	/** Superclass name (default: "Skin") */
+	/**
+	 * Superclass name (default: "Skin").
+	 */
 	readonly superClassName: string;
-	/** Skin width (from root attributes) */
+	/**
+	 * Skin width (from root attributes).
+	 */
 	readonly width?: number;
-	/** Skin height (from root attributes) */
+	/**
+	 * Skin height (from root attributes).
+	 */
 	readonly height?: number;
-	/** All imports needed: className → module */
+	/**
+	 * All imports needed: className → module.
+	 */
 	readonly imports: Map<string, string>;
-	/** Skin part IDs */
+	/**
+	 * Skin part IDs.
+	 */
 	readonly skinParts: string[];
-	/** Visual children of the skin */
+	/**
+	 * Visual children of the skin.
+	 */
 	readonly children: SkinNode[];
-	/** Property children of the skin */
+	/**
+	 * Property children of the skin.
+	 */
 	readonly propertyChildren: PropertyChild[];
-	/** State definitions */
+	/**
+	 * State definitions.
+	 */
 	readonly states: StateDef[];
-	/** Inline declarations (non-visual) */
+	/**
+	 * Inline declarations (non-visual).
+	 */
 	readonly declarations: SkinNode[];
 	/**
 	 * Tag names that could not be resolved to a component or a project-defined

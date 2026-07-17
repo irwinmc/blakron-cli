@@ -22,6 +22,9 @@ export function generateHtml(): BuildPlugin {
 	};
 }
 
+/**
+ * Renders the page HTML for the given entry script and engine import map.
+ */
 function renderHtml(project: Project, entryScript: string, engine: Record<string, string>): string {
 	const { stage } = project.config;
 	const importMap = Object.keys(engine).length > 0 ? renderImportMap(engine) : '';
@@ -46,6 +49,10 @@ ${importMap}</head>
 `;
 }
 
+/**
+ * Renders the `<script type="importmap">` tag mapping engine package
+ * specifiers to their bundled chunk paths.
+ */
 function renderImportMap(engine: Record<string, string>): string {
 	const imports = Object.entries(engine)
 		.map(([pkg, file]) => `\t\t\t"${pkg}": "./${file}"`)

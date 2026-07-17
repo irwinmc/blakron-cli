@@ -46,7 +46,9 @@ export function compileEngine(): BuildPlugin {
 	};
 }
 
-/** Bundles a single engine package, returning its output filename. */
+/**
+ * Bundles a single engine package, returning its output filename.
+ */
 async function bundlePackage(
 	project: Project,
 	pkg: string,
@@ -78,7 +80,9 @@ async function bundlePackage(
 	return path.basename(output ?? `${base}.js`);
 }
 
-/** `@blakron/core` → `blakron.core`. */
+/**
+ * `@blakron/core` → `blakron.core`.
+ */
 export function chunkBaseName(pkg: string): string {
 	return pkg.replace(/^@/, '').replace(/\//g, '.');
 }

@@ -65,16 +65,18 @@ import type { NamespaceModule } from './registry.js';
 import type { SkinIR } from './ast.js';
 
 export interface CompileExmlOptions extends CodeGenOptions {
-	/** Project-defined EXML namespaces (see `ProjectConfig.exml.namespaces`). */
+	/**
+	 * Project-defined EXML namespaces (see `ProjectConfig.exml.namespaces`).
+	 */
 	customNamespaces?: readonly NamespaceModule[];
 }
 
 /**
  * Compile an EXML source string directly to JavaScript.
  *
- * @param source EXML source text
- * @param className Optional class name (used for factory function name)
- * @param options Code generation options, plus project-defined namespaces
+ * @param source - EXML source text
+ * @param className - Optional class name (used for factory function name)
+ * @param options - Code generation options, plus project-defined namespaces
  * @returns Generated JS source string
  */
 export function compileEXML(source: string, className?: string, options?: CompileExmlOptions): string {
@@ -85,9 +87,9 @@ export function compileEXML(source: string, className?: string, options?: Compil
 /**
  * Compile an EXML source string to a SkinIR (parse only, no codegen).
  *
- * @param source EXML source text
- * @param className Optional class name
- * @param customNamespaces Project-defined EXML namespaces
+ * @param source - EXML source text
+ * @param className - Optional class name
+ * @param customNamespaces - Project-defined EXML namespaces
  * @returns SkinIR intermediate representation
  */
 export function parseToIR(

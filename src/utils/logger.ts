@@ -12,6 +12,8 @@ export const logger = {
 	success: (msg: string): void => console.log(`${tag} ${green}${msg}${reset}`),
 	warn: (msg: string): void => console.warn(`${tag} ${yellow}${msg}${reset}`),
 	error: (msg: string): void => console.error(`${tag} ${red}${msg}${reset}`),
-	/** Logs a single pipeline step, indented under the current command. */
+	/**
+	 * Logs a single pipeline step, indented under the current command.
+	 */
 	step: (msg: string): void => console.log(`${tag} ${dim}›${reset} ${msg}`),
 };

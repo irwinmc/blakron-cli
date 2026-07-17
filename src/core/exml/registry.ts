@@ -7,11 +7,17 @@
  */
 
 export interface ComponentInfo {
-	/** Module path to import from (e.g. "@blakron/ui") */
+	/**
+	 * Module path to import from (e.g. "@blakron/ui").
+	 */
 	module: string;
-	/** The default property name — direct children are assigned here */
+	/**
+	 * The default property name — direct children are assigned here.
+	 */
 	defaultProperty?: string;
-	/** Whether defaultProperty accepts an Array (vs single value) */
+	/**
+	 * Whether `defaultProperty` accepts an array (vs a single value).
+	 */
 	isArray?: boolean;
 }
 
@@ -20,15 +26,21 @@ export interface ComponentInfo {
  * convention (see `ProjectConfig.exml.namespaces` in `@blakron/cli`).
  */
 export interface NamespaceModule {
-	/** The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`). */
+	/**
+	 * The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`).
+	 */
 	readonly prefix: string;
-	/** Virtual module specifier resolved via the HTML import map. */
+	/**
+	 * Virtual module specifier resolved via the HTML import map.
+	 */
 	readonly specifier: string;
 }
 
 // ── Namespace mappings ───────────────────────────────────────────────
 
-/** Map XML namespace prefixes to module import paths */
+/**
+ * Maps XML namespace prefixes to module import paths.
+ */
 const NAMESPACE_MODULES: Record<string, string> = {
 	eui: '@blakron/ui',
 	egret: '@blakron/core',
@@ -145,6 +157,10 @@ export function lookupComponent(
 
 /**
  * Get the default property for a component.
+ *
+ * @param tagName - Full tag name possibly with prefix (e.g. "eui:Button")
+ * @param customNamespaces - Project-defined namespaces from `blakron.config.ts`
+ * @returns The default property name, or `undefined` if the component is unknown
  */
 export function getDefaultProperty(
 	tagName: string,
@@ -156,6 +172,10 @@ export function getDefaultProperty(
 
 /**
  * Resolve a tag name to its import module path.
+ *
+ * @param tagName - Full tag name possibly with prefix (e.g. "eui:Button")
+ * @param customNamespaces - Project-defined namespaces from `blakron.config.ts`
+ * @returns The module path, or `null` if the tag could not be resolved
  */
 export function resolveModule(tagName: string, customNamespaces: readonly NamespaceModule[] = []): string | null {
 	// Check for namespace prefix first
@@ -174,14 +194,21 @@ export function resolveModule(tagName: string, customNamespaces: readonly Namesp
 
 /**
  * Get the local (un-prefixed) class name from a tag name.
+ *
+ * @param tagName - Full tag name possibly with prefix (e.g. "eui:Button")
+ * @returns The local class name (e.g. "Button")
  */
 export function localName(tagName: string): string {
 	return tagName.includes(':') ? tagName.split(':').pop()! : tagName;
 }
 
 /**
- * Check if a tag name is a known property node (contains a dot).
- * e.g. "eui:Button.label" → property "label" on Button
+ * Checks if a tag name is a known property node (contains a dot).
+ *
+ * e.g. "eui:Button.label" → property "label" on `Button`.
+ *
+ * @param tagName - Full tag name to check
+ * @returns Whether the tag name contains a dot
  */
 export function isPropertyNode(tagName: string): boolean {
 	return tagName.includes('.');
@@ -189,6 +216,9 @@ export function isPropertyNode(tagName: string): boolean {
 
 /**
  * Parse a property node tag like "eui:Button.label" into its parts.
+ *
+ * @param tagName - Full property node tag name
+ * @returns The owner class and property name, or `null` if not a property node
  */
 export function parsePropertyNode(tagName: string): { owner: string; property: string } | null {
 	// First strip namespace prefix

@@ -17,30 +17,44 @@
 // ── Public types ─────────────────────────────────────────────────────
 
 export interface XNode {
-	/** Node type */
+	/**
+	 * Node type.
+	 */
 	readonly type: 'element' | 'text';
 }
 
 export interface XText extends XNode {
 	readonly type: 'text';
-	/** Raw text content (may be whitespace) */
+	/**
+	 * Raw text content (may be whitespace).
+	 */
 	readonly text: string;
 }
 
 export interface XAttribute {
-	/** Full attribute name including prefix (e.g. "eui:label") */
+	/**
+	 * Full attribute name including prefix (e.g. "eui:label").
+	 */
 	readonly name: string;
-	/** Attribute value (unescaped) */
+	/**
+	 * Attribute value (unescaped).
+	 */
 	readonly value: string;
 }
 
 export interface XElement extends XNode {
 	readonly type: 'element';
-	/** Full tag name including prefix (e.g. "eui:Button") */
+	/**
+	 * Full tag name including prefix (e.g. "eui:Button").
+	 */
 	readonly name: string;
-	/** Attributes in order */
+	/**
+	 * Attributes in order.
+	 */
 	readonly attributes: XAttribute[];
-	/** Child nodes (elements and text) */
+	/**
+	 * Child nodes (elements and text).
+	 */
 	readonly children: XNode[];
 }
 

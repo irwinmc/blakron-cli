@@ -83,7 +83,9 @@ async function resolveLatest(pkg: string): Promise<string> {
 	return 'latest';
 }
 
-/** Reads this CLI's own version from its package.json. */
+/**
+ * Reads this CLI's own version from its package.json.
+ */
 async function readCliVersion(): Promise<string> {
 	const pkg = JSON.parse(await fs.readFile(CLI_PKG, 'utf-8')) as { version: string };
 	return pkg.version;

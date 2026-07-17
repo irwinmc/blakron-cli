@@ -9,16 +9,31 @@ import type { BuildContext, BuildPlugin } from '../pipeline.js';
 import type { Project } from '../project.js';
 
 interface ExmlFile {
-	/** Absolute path to the `.exml` file. */
+	/**
+	 * Absolute path to the `.exml` file.
+	 */
 	path: string;
-	/** Path relative to `resource/`, using forward slashes. */
+	/**
+	 * Path relative to `resource/`, using forward slashes.
+	 */
 	relPath: string;
+	/**
+	 * Raw EXML source text.
+	 */
 	contents: string;
 }
 
-/** A resolved skin: its source file plus the class name declared in the EXML. */
+/**
+ * A resolved skin: its source file plus the class name declared in the EXML.
+ */
 interface CompiledSkin {
+	/**
+	 * The source `.exml` file this skin was compiled from.
+	 */
 	file: ExmlFile;
+	/**
+	 * The skin's class name, from its `class="..."` attribute.
+	 */
 	className: string;
 }
 
@@ -80,7 +95,9 @@ export function compileExml(): BuildPlugin {
 /**
  * Generates one ESM module per skin in a temp dir, plus an index that imports
  * and registers them, then bundles to `js/default.thm[.min_<hash>].js`.
- * Engine packages stay external (resolved by the page import map).
+ *
+ * Engine packages and custom namespaces stay external (resolved by the page
+ * import map — see `compile-engine.ts` and `compile-custom-namespaces.ts`).
  */
 async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promise<string> {
 	const { project } = ctx;
@@ -129,7 +146,9 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 	}
 }
 
-/** Generates an ESM skin factory, returning a stub on parse failure. */
+/**
+ * Generates an ESM skin factory, returning a stub on parse failure.
+ */
 function generateSkinModule(
 	skin: CompiledSkin,
 	customNamespaces: readonly { prefix: string; specifier: string }[],
@@ -148,7 +167,9 @@ function generateSkinModule(
 	}
 }
 
-/** Determines which `.exml` files to compile (honours `autoGenerateExmlsList`). */
+/**
+ * Determines which `.exml` files to compile (honours `autoGenerateExmlsList`).
+ */
 async function resolveExmlFiles(project: Project, theme: ThemeData): Promise<ExmlFile[]> {
 	const declared = (theme.exmls ?? []).map(e => (typeof e === 'string' ? e : e?.path)).filter(Boolean) as string[];
 
@@ -166,7 +187,9 @@ async function resolveExmlFiles(project: Project, theme: ThemeData): Promise<Exm
 	return collectExmlFiles(project.resourceDir);
 }
 
-/** Recursively collects every `.exml` file under `resource/`, sorted by path. */
+/**
+ * Recursively collects every `.exml` file under `resource/`, sorted by path.
+ */
 async function collectExmlFiles(resourceDir: string): Promise<ExmlFile[]> {
 	const results: ExmlFile[] = [];
 
@@ -188,7 +211,9 @@ async function collectExmlFiles(resourceDir: string): Promise<ExmlFile[]> {
 	return results.sort((a, b) => a.relPath.localeCompare(b.relPath));
 }
 
-/** Resolves a theme-declared EXML path (project-root- or resource-relative). */
+/**
+ * Resolves a theme-declared EXML path (project-root- or resource-relative).
+ */
 function resolveExmlPath(project: Project, declared: string): string {
 	const normalized = declared.replace(/^\.\//, '');
 	return normalized.startsWith('resource/')
@@ -196,6 +221,9 @@ function resolveExmlPath(project: Project, declared: string): string {
 		: path.resolve(project.resourceDir, normalized);
 }
 
+/**
+ * Reads a `.exml` file at an absolute path, computing its `resource/`-relative path.
+ */
 async function readExmlAt(resourceDir: string, absolute: string): Promise<ExmlFile> {
 	return {
 		path: absolute,
@@ -204,7 +232,9 @@ async function readExmlAt(resourceDir: string, absolute: string): Promise<ExmlFi
 	};
 }
 
-/** Reads the existing theme file, or returns an empty theme on miss. */
+/**
+ * Reads the existing theme file, or returns an empty theme on miss.
+ */
 async function loadTheme(project: Project): Promise<ThemeData> {
 	try {
 		return JSON.parse(await fs.readFile(project.themeFile!, 'utf-8')) as ThemeData;
@@ -233,17 +263,24 @@ function remapSkins(project: Project, skins: Record<string, string>, compiled: C
 	return result;
 }
 
-/** Reads the `class="..."` attribute, falling back to the file name. */
+/**
+ * Reads the `class="..."` attribute, falling back to the file name.
+ */
 function extractClassName(file: ExmlFile): string {
 	const match = file.contents.match(/class="([^"]+)"/);
 	return match ? match[1] : path.basename(file.path, '.exml');
 }
 
-/** `skins.ButtonSkin` → `createButtonSkin` (matches the EXML codegen). */
+/**
+ * `skins.ButtonSkin` → `createButtonSkin` (matches the EXML codegen).
+ */
 function factoryName(className: string): string {
 	return `create${className.split('.').pop()}`;
 }
 
+/**
+ * Converts a file system path to forward-slash form (a no-op on POSIX).
+ */
 function toPosix(p: string): string {
 	return p.split(path.sep).join('/');
 }

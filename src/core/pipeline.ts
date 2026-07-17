@@ -13,13 +13,21 @@ export interface BuildContext {
 	readonly sourcemap: boolean;
 	readonly analyze: boolean;
 	readonly watch: boolean;
-	/** Artifacts produced during the build, populated incrementally by plugins. */
+	/**
+	 * Artifacts produced during the build, populated incrementally by plugins.
+	 */
 	readonly outputs: {
-		/** Entry script path, relative to the output dir (e.g. `Main.js`, `js/main.min_ab12.js`). */
+		/**
+		 * Entry script path, relative to the output dir (e.g. `Main.js`, `js/main.min_ab12.js`).
+		 */
 		entryScript?: string;
-		/** Compiled skins module path, relative to the output dir (e.g. `js/default.thm.js`). */
+		/**
+		 * Compiled skins module path, relative to the output dir (e.g. `js/default.thm.js`).
+		 */
 		skinsScript?: string;
-		/** Engine import-map: package specifier → chunk path relative to output dir. */
+		/**
+		 * Engine import-map: package specifier → chunk path relative to output dir.
+		 */
 		engine: Record<string, string>;
 		/**
 		 * Every source file bundled into a custom-namespace chunk (see
@@ -38,17 +46,23 @@ export interface BuildContext {
 		 */
 		namespaceModules: Map<string, string>;
 	};
-	/** Cleanup callbacks registered by long-lived plugins (watchers, contexts). */
+	/**
+	 * Cleanup callbacks registered by long-lived plugins (watchers, contexts).
+	 */
 	readonly disposers: Array<() => Promise<void> | void>;
 }
 
-/** A single, named step in the build pipeline. */
+/**
+ * A single, named step in the build pipeline.
+ */
 export interface BuildPlugin {
 	readonly name: string;
 	apply(ctx: BuildContext): Promise<void>;
 }
 
-/** Creates a fresh build context for a project. */
+/**
+ * Creates a fresh build context for a project.
+ */
 export function createContext(
 	project: Project,
 	options: { sourcemap?: boolean; analyze?: boolean; watch?: boolean } = {},
@@ -63,7 +77,9 @@ export function createContext(
 	};
 }
 
-/** Runs plugins in order, logging each step. */
+/**
+ * Runs plugins in order, logging each step.
+ */
 export async function runPipeline(ctx: BuildContext, plugins: BuildPlugin[]): Promise<void> {
 	for (const plugin of plugins) {
 		logger.step(plugin.name);
@@ -71,7 +87,9 @@ export async function runPipeline(ctx: BuildContext, plugins: BuildPlugin[]): Pr
 	}
 }
 
-/** Invokes every registered disposer, ignoring individual failures. */
+/**
+ * Invokes every registered disposer, ignoring individual failures.
+ */
 export async function disposeContext(ctx: BuildContext): Promise<void> {
 	await Promise.allSettled(ctx.disposers.map(dispose => dispose()));
 }

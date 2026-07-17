@@ -25,8 +25,8 @@ import { getDefaultProperty, lookupComponent } from './registry.js';
 
 export interface CodeGenOptions {
 	/**
-	 * Output format. Only `'esm'` is supported (import/export statements for use
-	 * as ES modules). Retained as an option for forward compatibility.
+	 * Output format. Only `'esm'` is supported (import/export statements for
+	 * use as ES modules). Retained as an option for forward compatibility.
 	 */
 	format?: 'esm';
 }
@@ -34,8 +34,8 @@ export interface CodeGenOptions {
 /**
  * Generate JavaScript source code from a SkinIR.
  *
- * @param ir The skin intermediate representation
- * @param options Code generation options
+ * @param ir - The skin intermediate representation
+ * @param options - Code generation options
  * @returns Generated JS source string
  */
 export function generateCode(ir: SkinIR, _options?: CodeGenOptions): string {
@@ -289,9 +289,6 @@ class CodeGen {
 		}
 
 		this.line(`skin.states = [${stateLines.join(', ')}];`);
-
-		// Emit state-specific property overrides from nodes
-		this.emitStatePropertyOverrides();
 	}
 
 	private generateStateExpr(state: StateDef): string {
@@ -329,11 +326,6 @@ class CodeGen {
 			default:
 				return '/* unknown override */';
 		}
-	}
-
-	private emitStatePropertyOverrides(): void {
-		// State-specific properties are now handled directly in generateStateExpr.
-		// This method is kept for potential future use.
 	}
 
 	private collectStatePropertyOverrides(

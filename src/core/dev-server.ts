@@ -15,7 +15,13 @@ import {
 import { logger } from '../utils/logger.js';
 
 export interface DevServerOptions {
+	/**
+	 * Port for the dev server to listen on.
+	 */
 	port: number;
+	/**
+	 * Whether to generate sourcemaps for the app bundle.
+	 */
 	sourcemap: boolean;
 }
 
@@ -49,7 +55,9 @@ export async function startDevServer(project: Project, options: DevServerOptions
 	});
 }
 
-/** Recompiles EXML and re-copies assets when a `.exml` file changes. */
+/**
+ * Recompiles EXML and re-copies assets when a `.exml` file changes.
+ */
 function watchResources(project: Project, ctx: BuildContext): void {
 	if (!project.config.exml) return;
 
@@ -76,7 +84,9 @@ function watchResources(project: Project, ctx: BuildContext): void {
 	ctx.disposers.push(() => watcher.close());
 }
 
-/** Serves static files from the project output directory. */
+/**
+ * Serves static files from the project output directory.
+ */
 function startHttpServer(project: Project, port: number): http.Server {
 	const server = http.createServer(async (req, res) => {
 		const url = (req.url ?? '/').split('?')[0];

@@ -13,11 +13,17 @@ export type BuildMode = 'development' | 'release';
  * both import the same module instance.
  */
 export interface CustomNamespace {
-	/** The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`). */
+	/**
+	 * The XML namespace prefix (e.g. `game` for `xmlns:game="game.*"`).
+	 */
 	readonly prefix: string;
-	/** Virtual module specifier used in generated `import` statements. */
+	/**
+	 * Virtual module specifier used in generated `import` statements.
+	 */
 	readonly specifier: string;
-	/** Absolute path to the barrel file exporting every class in this namespace. */
+	/**
+	 * Absolute path to the barrel file exporting every class in this namespace.
+	 */
 	readonly entry: string;
 }
 
@@ -29,15 +35,25 @@ export interface CustomNamespace {
  * themselves. This is the single source of truth for the build pipeline.
  */
 export interface Project {
-	/** Project root (current working directory). */
+	/**
+	 * Project root (current working directory).
+	 */
 	readonly root: string;
-	/** Build mode this project view was resolved for. */
+	/**
+	 * Build mode this project view was resolved for.
+	 */
 	readonly mode: BuildMode;
-	/** Validated user configuration. */
+	/**
+	 * Validated user configuration.
+	 */
 	readonly config: ProjectConfig;
-	/** Absolute path to the entry source file. */
+	/**
+	 * Absolute path to the entry source file.
+	 */
 	readonly entry: string;
-	/** Absolute path to the source root directory (`src/`). */
+	/**
+	 * Absolute path to the source root directory (`src/`).
+	 */
 	readonly srcDir: string;
 	/**
 	 * Absolute output directory.
@@ -45,23 +61,36 @@ export interface Project {
 	 * - release: `bin-release/web/<timestamp>` (Egret-style versioned folder)
 	 */
 	readonly outputDir: string;
-	/** Absolute path to the `resource/` directory. */
+	/**
+	 * Absolute path to the `resource/` directory.
+	 */
 	readonly resourceDir: string;
-	/** Absolute path to the theme file, when EXML is enabled. */
+	/**
+	 * Absolute path to the theme file, when EXML is enabled.
+	 */
 	readonly themeFile?: string;
 	/**
 	 * `@blakron/*` engine packages this project depends on (excluding the CLI).
 	 * Each is bundled into its own chunk and wired up via an HTML import map.
 	 */
 	readonly enginePackages: string[];
-	/** Project-defined EXML namespaces, resolved from `config.exml.namespaces`. */
+	/**
+	 * Project-defined EXML namespaces, resolved from `config.exml.namespaces`.
+	 */
 	readonly customNamespaces: CustomNamespace[];
 }
 
-/** Base output folder names, used by both build and clean. */
+/**
+ * Base output folder names, used by both build and clean.
+ */
 export const OUTPUT_DIRS = { development: 'bin-debug', release: 'bin-release' } as const;
 
-/** Loads and resolves the project rooted at the current working directory. */
+/**
+ * Loads and resolves the project rooted at the current working directory.
+ *
+ * @param mode - The build mode to resolve the project for
+ * @returns The resolved project view
+ */
 export async function loadProject(mode: BuildMode): Promise<Project> {
 	const root = process.cwd();
 	const config = await loadConfig();
@@ -84,10 +113,16 @@ export async function loadProject(mode: BuildMode): Promise<Project> {
 	};
 }
 
-/** The specifier prefix used for project-defined EXML namespaces (kept out of npm's `@scope` space). */
+/**
+ * The specifier prefix used for project-defined EXML namespaces (kept out of
+ * npm's `@scope` space).
+ */
 const NAMESPACE_SPECIFIER_PREFIX = '#ns/';
 
-/** Resolves `config.exml.namespaces` into `CustomNamespace` entries with absolute barrel paths. */
+/**
+ * Resolves `config.exml.namespaces` into `CustomNamespace` entries with
+ * absolute barrel paths.
+ */
 function resolveCustomNamespaces(root: string, namespaces: Record<string, string> | undefined): CustomNamespace[] {
 	if (!namespaces) return [];
 	return Object.entries(namespaces).map(([prefix, entry]) => ({
@@ -97,7 +132,9 @@ function resolveCustomNamespaces(root: string, namespaces: Record<string, string
 	}));
 }
 
-/** Reads `@blakron/*` runtime dependencies (excluding the CLI) from package.json. */
+/**
+ * Reads `@blakron/*` runtime dependencies (excluding the CLI) from package.json.
+ */
 function detectEnginePackages(root: string): string[] {
 	try {
 		const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf-8')) as {
@@ -111,7 +148,9 @@ function detectEnginePackages(root: string): string[] {
 	}
 }
 
-/** Egret-style `YYMMDDHHmmss` version stamp. */
+/**
+ * Egret-style `YYMMDDHHmmss` version stamp.
+ */
 function timestamp(): string {
 	const d = new Date();
 	const p = (n: number) => String(n).padStart(2, '0');

@@ -43,19 +43,28 @@ export function compileCustomNamespaces(): BuildPlugin {
 	};
 }
 
-/** External specifiers a namespace chunk must not inline: engine packages and every other namespace. */
+/**
+ * External specifiers a namespace chunk must not inline: engine packages and
+ * every other namespace.
+ */
 function externalFor(project: Project, ns: CustomNamespace): string[] {
 	return [...project.enginePackages, ...project.customNamespaces.filter(n => n !== ns).map(n => n.specifier)];
 }
 
 interface BundleResult {
-	/** Output chunk filename, relative to `js/`. */
+	/**
+	 * Output chunk filename, relative to `js/`.
+	 */
 	chunk: string;
-	/** Absolute paths of every source file this chunk inlined. */
+	/**
+	 * Absolute paths of every source file this chunk inlined.
+	 */
 	inputs: string[];
 }
 
-/** Bundles a single namespace barrel (its entry is already an absolute file). */
+/**
+ * Bundles a single namespace barrel (its entry is already an absolute file).
+ */
 async function bundleNamespace(
 	project: Project,
 	ns: CustomNamespace,
@@ -99,6 +108,10 @@ async function bundleNamespace(
 	return toBundleResult(project, result, base);
 }
 
+/**
+ * Extracts the output chunk filename and every source file it inlined from
+ * an esbuild result's metafile.
+ */
 function toBundleResult(project: Project, result: esbuild.BuildResult, base: string): BundleResult {
 	const outputs = result.metafile!.outputs;
 	const outputPath = Object.keys(outputs).find(f => f.endsWith('.js'));
@@ -108,7 +121,9 @@ function toBundleResult(project: Project, result: esbuild.BuildResult, base: str
 	return { chunk: path.basename(outputPath ?? `${base}.js`), inputs };
 }
 
-/** `game` → `ns.game` (kept distinct from `@blakron/*` engine chunk names). */
+/**
+ * `game` → `ns.game` (kept distinct from `@blakron/*` engine chunk names).
+ */
 function chunkBaseName(prefix: string): string {
 	return `ns.${prefix}`;
 }

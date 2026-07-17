@@ -18,9 +18,10 @@ export { copyAssets } from './copy-assets.js';
 /**
  * The standard build sequence.
  *
- * Order matters: custom namespace chunks must exist before EXML compilation
- * (the skins bundle marks them external) and before source compilation (the
- * app bundle does too); engine and source compilation report their output
+ * Order matters: `compileCustomNamespaces` must run before `compileSource`,
+ * since the latter reads `ctx.outputs.namespaceModules` to mark namespace
+ * files external and exclude them from per-file dev output (see
+ * `compile-source.ts`). Engine and source compilation report their output
  * paths, then the HTML and manifest referencing them are written, and
  * finally static assets are copied.
  */

@@ -25,6 +25,11 @@ import type {
 
 /**
  * Parse an EXML source string into a SkinIR.
+ *
+ * @param source - EXML source text
+ * @param className - Optional class name (used for factory function name)
+ * @param customNamespaces - Project-defined EXML namespaces
+ * @returns The parsed skin intermediate representation
  */
 export function parseEXML(
 	source: string,
@@ -41,6 +46,10 @@ export function parseEXML(
 
 /**
  * Parse an already-parsed XML root element into a SkinIR.
+ *
+ * @param root - The parsed XML root element
+ * @param customNamespaces - Project-defined EXML namespaces
+ * @returns The parsed skin intermediate representation
  */
 export function parseSkinRoot(root: XElement, customNamespaces: readonly NamespaceModule[] = []): SkinIR {
 	const ctx = new ParseContext(customNamespaces);
@@ -51,24 +60,40 @@ export function parseSkinRoot(root: XElement, customNamespaces: readonly Namespa
 // ── Parse context ────────────────────────────────────────────────────
 
 class ParseContext {
-	/** Collected imports: className → module */
+	/**
+	 * Collected imports: className → module.
+	 */
 	imports = new Map<string, string>();
-	/** Skin part IDs */
+	/**
+	 * Skin part IDs.
+	 */
 	skinParts: string[] = [];
-	/** All nodes (flat list for state processing) */
+	/**
+	 * All nodes (flat list for state processing).
+	 */
 	allNodes: SkinNode[] = [];
-	/** State definitions */
+	/**
+	 * State definitions.
+	 */
 	states: StateDef[] = [];
-	/** Declarations */
+	/**
+	 * Declarations.
+	 */
 	declarations: SkinNode[] = [];
-	/** Tag names that could not be resolved to a component or namespace */
+	/**
+	 * Tag names that could not be resolved to a component or namespace.
+	 */
 	unresolvedTags: string[] = [];
-	/** Counter for generating unique variable names */
+	/**
+	 * Counter for generating unique variable names.
+	 */
 	private varCounter = 0;
 
 	constructor(private readonly customNamespaces: readonly NamespaceModule[]) {}
 
-	/** Process the root <eui:Skin> element */
+	/**
+	 * Process the root `<eui:Skin>` element.
+	 */
 	processRoot(root: XElement): void {
 		// Root should be a Skin tag
 		const rootClass = localName(root.name);
@@ -133,15 +158,21 @@ class ParseContext {
 		this.collectStateOverrides();
 	}
 
-	/** Class name extracted from root 'class' attribute */
+	/**
+	 * Class name extracted from the root `class` attribute.
+	 */
 	private _className = '';
-	/** Root width/height */
+	/**
+	 * Root width/height.
+	 */
 	private _width?: PropertyValue;
 	private _height?: PropertyValue;
 
 	/**
 	 * Collect state definitions from children.
-	 * Handles both direct <eui:State> children and <eui:states> property children.
+	 *
+	 * Handles both direct `<eui:State>` children and `<eui:states>` property
+	 * children.
 	 */
 	private collectStates(childElements: XElement[]): void {
 		for (const el of childElements) {
@@ -167,7 +198,9 @@ class ParseContext {
 		}
 	}
 
-	/** Process a <Declarations> element */
+	/**
+	 * Process a `<Declarations>` element.
+	 */
 	private processDeclarations(el: XElement): void {
 		const children = filterElements(el.children);
 		for (const child of children) {
@@ -176,7 +209,9 @@ class ParseContext {
 		}
 	}
 
-	/** Parse a State element and its overrides */
+	/**
+	 * Parse a `State` element and its overrides.
+	 */
 	private parseState(el: XElement): StateDef {
 		const nameAttr = this.getAttr(el, 'name') ?? '';
 		const stateGroups = (this.getAttr(el, 'stateGroups') ?? '')
@@ -197,7 +232,9 @@ class ParseContext {
 		return { name: nameAttr, stateGroups, overrides };
 	}
 
-	/** Parse an AddItems override */
+	/**
+	 * Parse an `AddItems` override.
+	 */
 	private parseAddItems(el: XElement): StateAddItems {
 		return {
 			type: 'AddItems',
@@ -208,7 +245,9 @@ class ParseContext {
 		};
 	}
 
-	/** Parse a SetProperty override */
+	/**
+	 * Parse a `SetProperty` override.
+	 */
 	private parseSetProperty(el: XElement): StateSetProperty {
 		const rawValue = this.getAttr(el, 'value') ?? '';
 		return {
@@ -219,10 +258,14 @@ class ParseContext {
 		};
 	}
 
-	/** Collected IDs for duplicate detection */
+	/**
+	 * Collected IDs for duplicate detection.
+	 */
 	private _idSet = new Set<string>();
 
-	/** Parse a component XML element into a SkinNode */
+	/**
+	 * Parse a component XML element into a `SkinNode`.
+	 */
 	private parseNode(el: XElement): SkinNode | null {
 		const cls = localName(el.name);
 		const info = lookupComponent(el.name, this.customNamespaces);
@@ -340,7 +383,9 @@ class ParseContext {
 		};
 	}
 
-	/** Parse a raw attribute value string into a PropertyValue */
+	/**
+	 * Parse a raw attribute value string into a `PropertyValue`.
+	 */
 	private parseValue(raw: string): PropertyValue {
 		// Check for binding expression {expr}
 		const bindingMatch = raw.match(/^\{(.+)\}$/);
@@ -373,7 +418,9 @@ class ParseContext {
 		return { type: 'literal', value: raw };
 	}
 
-	/** After all nodes are parsed, collect state-specific overrides */
+	/**
+	 * After all nodes are parsed, collect state-specific overrides.
+	 */
 	private collectStateOverrides(): void {
 		// Process includeIn/excludeFrom on nodes → generate AddItems overrides
 		for (const node of this.allNodes) {
@@ -394,7 +441,9 @@ class ParseContext {
 		}
 	}
 
-	/** Add an override to an existing state definition */
+	/**
+	 * Add an override to an existing state definition.
+	 */
 	private addStateOverride(stateName: string, override: StateOverride): void {
 		const state = this.states.find(s => s.name === stateName);
 		if (state) {
@@ -402,22 +451,30 @@ class ParseContext {
 		}
 	}
 
-	/** Generate a unique variable name */
+	/**
+	 * Generate a unique variable name.
+	 */
 	private genVar(base: string): string {
 		return `_${base.charAt(0).toLowerCase() + base.slice(1)}${++this.varCounter}`;
 	}
 
-	/** Get an attribute value by name */
+	/**
+	 * Get an attribute value by name.
+	 */
 	private getAttr(el: XElement, name: string): string | undefined {
 		return el.attributes.find(a => a.name === name)?.value;
 	}
 
-	/** Register an import */
+	/**
+	 * Register an import.
+	 */
 	private addImport(className: string, module: string): void {
 		this.imports.set(className, module);
 	}
 
-	/** Build the final SkinIR */
+	/**
+	 * Build the final `SkinIR`.
+	 */
 	toIR(): SkinIR {
 		// Extract numeric width/height (percent not valid for skin itself)
 		let width: number | undefined;

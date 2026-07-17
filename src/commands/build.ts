@@ -6,9 +6,21 @@ import { BuildError } from '../core/errors.js';
 import { logger } from '../utils/logger.js';
 
 interface BuildOptions {
+	/**
+	 * Produce a minified, content-hashed release build under `bin-release`.
+	 */
 	release: boolean;
+	/**
+	 * Generate sourcemaps for the app bundle.
+	 */
 	sourcemap: boolean;
+	/**
+	 * Rebuild source on file changes (always uses development mode).
+	 */
 	watch: boolean;
+	/**
+	 * Print esbuild bundle size analysis after the build.
+	 */
 	analyze: boolean;
 }
 
@@ -50,11 +62,17 @@ export const buildCommand = new Command('build')
 		}
 	});
 
+/**
+ * Formats an absolute output directory as a path relative to the cwd, for
+ * display in the success message.
+ */
 function relativeOut(outputDir: string): string {
 	return outputDir.replace(process.cwd() + '/', '');
 }
 
-/** Resolves when the process receives SIGINT, after running cleanup. */
+/**
+ * Resolves when the process receives SIGINT, after running cleanup.
+ */
 function waitForShutdown(cleanup: () => Promise<void> | void): Promise<void> {
 	return new Promise<void>(resolve => {
 		process.on('SIGINT', async () => {

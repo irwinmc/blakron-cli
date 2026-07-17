@@ -38,7 +38,9 @@ const COMMON: esbuild.BuildOptions = {
 	logLevel: 'warning',
 };
 
-/** Per-file output preserving the source tree (development). */
+/**
+ * Per-file output preserving the source tree (development).
+ */
 async function buildDevelopment(ctx: BuildContext): Promise<void> {
 	const { project } = ctx;
 	const allSources = await collectSources(project.srcDir);
@@ -72,7 +74,9 @@ async function buildDevelopment(ctx: BuildContext): Promise<void> {
 	await esbuild.build(options);
 }
 
-/** Single minified, content-hashed bundle under `js/` (release). */
+/**
+ * Single minified, content-hashed bundle under `js/` (release).
+ */
 async function buildRelease(ctx: BuildContext): Promise<void> {
 	const { project } = ctx;
 	const result = await esbuild.build({
@@ -96,6 +100,9 @@ async function buildRelease(ctx: BuildContext): Promise<void> {
 	}
 }
 
+/**
+ * Build-time `define` replacements for `process.env.DEBUG`/`process.env.RELEASE`.
+ */
 function defines(isRelease: boolean): Record<string, string> {
 	return {
 		'process.env.DEBUG': JSON.stringify(!isRelease),
@@ -103,12 +110,16 @@ function defines(isRelease: boolean): Record<string, string> {
 	};
 }
 
-/** Maps an absolute source path to its output path, relative to the output dir. */
+/**
+ * Maps an absolute source path to its output path, relative to the output dir.
+ */
 function toOutputPath(project: Project, sourceFile: string): string {
 	return path.relative(project.srcDir, sourceFile).replace(/\.ts$/, '.js').split(path.sep).join('/');
 }
 
-/** Collects every `.ts` source (excluding `.d.ts`) under the source directory. */
+/**
+ * Collects every `.ts` source (excluding `.d.ts`) under the source directory.
+ */
 async function collectSources(srcDir: string): Promise<string[]> {
 	const results: string[] = [];
 
