@@ -11,5 +11,5 @@
         verticalAlign="middle"
         textColor="0xdfe6e9"
         textColor.disabled="0x636e72"
-        text="{data}" size="14"/>
+        size="14"/>
 </eui:Skin>

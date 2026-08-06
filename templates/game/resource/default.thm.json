@@ -11,6 +11,7 @@
 		"HScrollBar": "skins.HScrollBarSkin",
 		"VScrollBar": "skins.VScrollBarSkin",
 		"TextInput": "skins.TextInputSkin",
+		"ComboBox": "skins.ComboBoxSkin",
 		"Scroller": "skins.ScrollerSkin",
 		"ItemRenderer": "skins.ItemRendererSkin"
 	},
