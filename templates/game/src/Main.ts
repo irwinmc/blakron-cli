@@ -49,7 +49,6 @@ class Main extends UILayer {
 	}
 
 	private async loadTheme(): Promise<void> {
-		// 加载默认主题（UI 组件默认皮肤）
 		// 加载主题（UI 组件默认皮肤映射）
 		const theme = new Theme('resource/default.thm.json');
 		await new Promise<void>(resolve => theme.addEventListener(Event.COMPLETE, () => resolve()));

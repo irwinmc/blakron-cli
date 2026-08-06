@@ -68,6 +68,16 @@ describe('parseXML', () => {
 			height: '50',
 		});
 	});
+
+	it('rejects a mismatched closing tag', () => {
+		expect(() => parseXML('<eui:Skin><eui:Button/></eui:Broken>')).toThrow(
+			'expected closing tag </eui:Skin>',
+		);
+	});
+
+	it('rejects a missing closing tag', () => {
+		expect(() => parseXML('<eui:Skin><eui:Button/>')).toThrow('missing closing tag </eui:Skin>');
+	});
 });
 
 describe('game template skins', () => {

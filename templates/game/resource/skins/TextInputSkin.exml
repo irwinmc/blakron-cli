@@ -9,11 +9,11 @@
         strokeColor.normal="0x0f3460"
         strokeColor.disabled="0x4a5459"
         strokeWeight="1"/>
-    <eui:EditableText id="textDisplay" left="10" verticalCenter="0" width="95%" height="24"
+    <eui:EditableText id="textDisplay" left="10" right="10" verticalCenter="0" height="24"
         verticalAlign="middle"
         textColor="0xdfe6e9"
         size="14"/>
-    <eui:Label id="promptDisplay" left="10" verticalCenter="0" width="95%" height="24"
+    <eui:Label id="promptDisplay" left="10" right="10" verticalCenter="0" height="24"
         touchEnabled="false" includeIn="normalWithPrompt,disabledWithPrompt"
         multiline="false" wordWrap="false"
         verticalAlign="middle"

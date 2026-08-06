@@ -5,12 +5,20 @@ All notable changes to `@blakron/cli` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.2 — 2026-08-06
+
+### Changed
+
+- **TextInputSkin**: `textDisplay` and `promptDisplay` now use `left="10"` / `right="10"` constraints so their layout bounds match the input background and native StageText overlay.
+- Updated the game-template documentation to describe its current `UILayer` / `createChildren()` lifecycle and the recommended custom-component initialization hooks.
+- Release builds now fail on invalid EXML instead of silently publishing an empty skin stub; development builds continue with a warning for faster iteration.
+
 ## 0.7.1 — 2026-08-06
 
 ### Changed
 
 - **HSliderSkin / VSliderSkin**: tracks now use `width="100%"` / `height="100%"` instead of inset `left`/`right` / `top`/`bottom` constraints, aligning with the `@blakron/ui` 1.1.0 fix that positions the thumb relative to the track's layout bounds.
-- **TextInputSkin**: `textDisplay` and `promptDisplay` now use explicit `width`/`height` with `verticalCenter` instead of stretch-to-fill `left`/`right`/`top`/`bottom`. `promptDisplay` sets `multiline="false"` / `wordWrap="false"` to prevent accidental wrapping of placeholder text.
+- **TextInputSkin**: `textDisplay` and `promptDisplay` use a fixed height with `verticalCenter`; `promptDisplay` sets `multiline="false"` / `wordWrap="false"` to prevent accidental wrapping of placeholder text.
 
 ## 0.7.0 - 2026-08-06
 

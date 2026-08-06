@@ -105,13 +105,14 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 	await ensureDir(jsDir);
 
 	const customNamespaces = project.customNamespaces.map(ns => ({ prefix: ns.prefix, specifier: ns.specifier }));
+	const isRelease = project.mode === 'release';
 
 	const stubDir = await fs.mkdtemp(path.join(os.tmpdir(), 'blakron-skins-'));
 	try {
 		const indexLines: string[] = [];
 		await Promise.all(
 			skins.map(async (skin, i) => {
-				const code = generateSkinModule(skin, customNamespaces);
+				const code = generateSkinModule(skin, customNamespaces, isRelease);
 				await fs.writeFile(path.join(stubDir, `skin${i}.ts`), code);
 				const funcName = factoryName(skin.className);
 				indexLines.push(
@@ -122,7 +123,6 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 		);
 		await fs.writeFile(path.join(stubDir, 'index.ts'), indexLines.join('\n\n') + '\n');
 
-		const isRelease = project.mode === 'release';
 		const engineExternal =
 			project.enginePackages.length > 0 ? project.enginePackages : ['@blakron/ui', '@blakron/core'];
 		const result = await esbuild.build({
@@ -152,6 +152,7 @@ async function buildSkinsModule(ctx: BuildContext, skins: CompiledSkin[]): Promi
 function generateSkinModule(
 	skin: CompiledSkin,
 	customNamespaces: readonly { prefix: string; specifier: string }[],
+	strict: boolean,
 ): string {
 	try {
 		const ir = parseToIR(skin.file.contents, skin.className, customNamespaces);
@@ -162,6 +163,9 @@ function generateSkinModule(
 		return generateCode(ir, { format: 'esm' });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
+		if (strict) {
+			throw new Error(`EXML compile failed for ${skin.file.relPath}: ${message}`, { cause: err });
+		}
 		logger.warn(`EXML compile failed for ${skin.file.relPath}: ${message}`);
 		return `// Failed to compile ${skin.file.relPath}: ${message}\nexport function ${factoryName(skin.className)}() { return {}; }\n`;
 	}

@@ -53,17 +53,17 @@ blakron create <name> [options]
 
 **Templates:**
 
-| Template | Extends  | Dependencies                                      | Description                                                                      |
-| -------- | -------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `game`   | `Sprite` | `@blakron/core` + `@blakron/game` + `@blakron/ui` | Full-featured project with resource loading, scene building, and Tween animation |
-| `empty`  | `Sprite` | `@blakron/core`                                   | Minimal project — pure Canvas rendering, no extra dependencies                   |
+| Template | Extends   | Dependencies                                      | Description                                                                      |
+| -------- | --------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `game`   | `UILayer` | `@blakron/core` + `@blakron/game` + `@blakron/ui` | Full-featured project with resource loading, scene building, and Tween animation |
+| `empty`  | `Sprite`  | `@blakron/core`                                   | Minimal project — pure Canvas rendering, no extra dependencies                   |
 
 **Lifecycle:**
 
-| Template | Entry class           | Lifecycle                                                                                                           |
-| -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `game`   | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage` → `runGame` → `loadResource` → `createGameScene` → `startAnimation` |
-| `empty`  | `Main extends Sprite` | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                                                     |
+| Template | Entry class            | Lifecycle                                                                                         |
+| -------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `game`   | `Main extends UILayer` | `createChildren` → `runGame` → `loadResource` → `loadTheme` → `createGameScene` → `startAnimation` |
+| `empty`  | `Main extends Sprite`  | constructor → `ADDED_TO_STAGE` → `onAddToStage`                                           |
 
 ### `blakron build`
 
@@ -179,6 +179,41 @@ The standard declarations `xmlns:eui="http://ns.egret.com/eui"` and
 `xmlns:egret="http://ns.egret.com/egret"` are namespace identifiers. The CLI
 resolves their prefixes internally and does not access those URLs over the
 network, so the original Egret namespace pages do not need to be hosted.
+
+### Custom component lifecycle
+
+For initialization that requires every EXML skin part to be available, override
+`childrenCreated()`:
+
+```ts
+import { Component } from '@blakron/ui';
+
+export class BattlePanel extends Component {
+	protected override childrenCreated(): void {
+		super.childrenCreated();
+		// imgBg, imgFrame, groupField, and other skin parts are now bound.
+	}
+}
+```
+
+The event-based equivalent is useful when initialization is composed externally:
+
+```ts
+import { UIEvent } from '@blakron/ui';
+
+this.once(UIEvent.CREATION_COMPLETE, this.onCreationComplete);
+```
+
+Use `partAdded()` and `partRemoved()` only when logic must follow an individual
+skin part across skin replacements. `childrenCreated()` and
+`UIEvent.CREATION_COMPLETE` run once for the component's initial creation.
+
+EXML skins compiled by the CLI are registered under their complete `class`
+attribute, so an Egret-style value such as
+`skinName = "game.ui.BattlePanelSkin"` works when that EXML is included in the
+loaded theme bundle. A component covered by the theme's `skins` mapping normally
+does not need to assign `skinName` itself. Hand-written `Skin` subclasses may be
+imported and assigned directly instead of using a string.
 
 ### Compilation Pipeline
 

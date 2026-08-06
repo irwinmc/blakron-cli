@@ -205,9 +205,12 @@ class _Parser {
 		// Consume closing tag
 		const closeMatch = this.src.slice(this.pos).match(RX_CLOSE);
 		if (closeMatch) {
+			if (closeMatch[1] !== tagName) {
+				throw new Error(`EXML: expected closing tag </${tagName}>, got </${closeMatch[1]}>`);
+			}
 			this.pos += closeMatch[0].length;
 		} else {
-			// No matching close tag — malformed but tolerant
+			throw new Error(`EXML: missing closing tag </${tagName}>`);
 		}
 
 		return { type: 'element', name: tagName, attributes: attrs, children };
