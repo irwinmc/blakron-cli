@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<eui:Skin class="skins.RadioButtonSkin" width="200" height="28"
+<eui:Skin class="skins.RadioButtonSkin" height="28" minWidth="28"
+    states="up,down,disabled,upAndSelected,downAndSelected,disabledAndSelected"
     xmlns:eui="http://ns.egret.com/eui">
-    <eui:states>
-        <eui:State name="up"/>
-        <eui:State name="down"/>
-        <eui:State name="disabled"/>
-        <eui:State name="upAndSelected"/>
-        <eui:State name="downAndSelected"/>
-        <eui:State name="disabledAndSelected"/>
-    </eui:states>
-    <eui:Rect id="dot" x="4" y="4" width="20" height="20"
+    <eui:Rect id="dot" left="4" verticalCenter="0" width="20" height="20"
         fillColor="0x2d3436"
         fillColor.down="0x636e72"
         fillColor.disabled="0x4a5459"
@@ -18,8 +11,7 @@
         fillColor.disabledAndSelected="0x4a5459"
         strokeColor="0x636e72"
         strokeWeight="1"/>
-    <eui:Label id="labelDisplay"
-        x="28" y="0" width="172" height="28"
+    <eui:Label id="labelDisplay" left="28" right="0" top="0" bottom="0"
         verticalAlign="middle"
         textColor="0xdfe6e9"
         textColor.disabled="0x636e72"

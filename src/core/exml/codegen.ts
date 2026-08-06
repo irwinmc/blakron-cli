@@ -133,12 +133,15 @@ class CodeGen {
 		if (this.ir.height != null) {
 			this.line(`skin.height = ${this.ir.height};`);
 		}
+		for (const prop of this.ir.properties) {
+			if (!prop.state) this.emitPropertyAssignment('skin', prop.name, prop.value);
+		}
 
 		// Create and configure all nodes
 		this.emitNodeDeclarations(this.ir.children, 'skin');
 
 		// Set elementsContent on skin
-		const defaultChildren = this.ir.children.filter(n => n.includeIn.length === 0);
+		const defaultChildren = this.ir.children.filter(n => n.includeIn.length === 0 && n.excludeFrom.length === 0);
 		if (defaultChildren.length > 0) {
 			const childVars = defaultChildren.map(n => n.varName).join(', ');
 			this.line(`skin.elementsContent = [${childVars}];`);
@@ -170,7 +173,7 @@ class CodeGen {
 			this.emitNodeDeclarations(node.children, node.varName);
 
 			// Assign children to default property
-			const defaultPropChildren = node.children.filter(c => c.includeIn.length === 0);
+			const defaultPropChildren = node.children.filter(c => c.includeIn.length === 0 && c.excludeFrom.length === 0);
 			if (defaultPropChildren.length > 0) {
 				const info = lookupComponent(node.className);
 				const defaultProp = info?.defaultProperty ?? 'elementsContent';
@@ -236,28 +239,30 @@ class CodeGen {
 	}
 
 	private emitBinding(target: string, prop: string, expression: string): void {
-		// Check for template string with multiple bindings
-		// e.g. "Hello {name}, age {age}" → Binding.bindProperties
-		const parts = parseBindingTemplate(expression);
-		if (parts.length === 1 && parts[0].type === 'binding') {
+		// The expression is already stripped of outer braces by parseValue().
+		// Check whether it contains inner braces (template binding like "Hello {name}!").
+		if (expression.includes('{')) {
+			// Template binding: Binding.bindProperties
+			const parts = parseBindingTemplate(expression);
+			if (parts.some(p => p.type === 'binding')) {
+				const templates: string[] = [];
+				const chainIndex: number[] = [];
+				for (let i = 0; i < parts.length; i++) {
+					if (parts[i].type === 'literal') {
+						templates.push(`"${escapeJS(parts[i].value)}"`);
+					} else {
+						templates.push(`"${parts[i].value}"`);
+						chainIndex.push(i);
+					}
+				}
+				this.line(
+					`Binding.bindProperties(this, [${templates.join(', ')}], [${chainIndex.join(', ')}], ${target}, "${prop}");`,
+				);
+			}
+		} else {
 			// Simple binding: Binding.bindProperty(host, ['chain'], target, 'prop')
 			this.line(
-				`Binding.bindProperty(this, ["${parts[0].value.split('.').join('", "')}"], ${target}, "${prop}");`,
-			);
-		} else if (parts.some(p => p.type === 'binding')) {
-			// Template binding: Binding.bindProperties
-			const templates: string[] = [];
-			const chainIndex: number[] = [];
-			for (let i = 0; i < parts.length; i++) {
-				if (parts[i].type === 'literal') {
-					templates.push(`"${escapeJS(parts[i].value)}"`);
-				} else {
-					templates.push(`"${parts[i].value}"`);
-					chainIndex.push(i);
-				}
-			}
-			this.line(
-				`Binding.bindProperties(this, [${templates.join(', ')}], [${chainIndex.join(', ')}], ${target}, "${prop}");`,
+				`Binding.bindProperty(this, ["${expression.split('.').join('", "')}"], ${target}, "${prop}");`,
 			);
 		}
 	}
@@ -297,6 +302,16 @@ class CodeGen {
 
 		// Add SetProperty overrides from node properties with this state name or matching stateGroup
 		const nodeOverrides = this.collectStatePropertyOverrides(this.ir.children);
+		for (const prop of this.ir.properties) {
+			if (prop.state) {
+				nodeOverrides.push({
+					stateName: prop.state,
+					targetId: '',
+					propName: prop.name,
+					value: prop.value,
+				});
+			}
+		}
 		for (const { stateName, targetId, propName, value } of nodeOverrides) {
 			// Match by state name or by stateGroup membership
 			const matches = stateName === state.name || state.stateGroups.includes(stateName);

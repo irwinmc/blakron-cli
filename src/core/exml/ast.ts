@@ -235,6 +235,10 @@ export interface SkinIR {
 	 */
 	readonly height?: number;
 	/**
+	 * Other properties declared on the root Skin element.
+	 */
+	readonly properties: PropertyAssignment[];
+	/**
 	 * All imports needed: className → module.
 	 */
 	readonly imports: Map<string, string>;

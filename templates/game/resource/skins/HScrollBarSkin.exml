@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<eui:Skin class="skins.HScrollBarSkin" width="200" height="12"
+<eui:Skin class="skins.HScrollBarSkin" minWidth="20" minHeight="8"
     xmlns:eui="http://ns.egret.com/eui">
-    <eui:Rect width="200" height="12" fillColor="0x2d3436" alpha="0.7"/>
-    <eui:Rect id="thumb" width="60" height="8" x="0" y="2" fillColor="0x636e72"/>
+    <eui:Rect left="0" right="0" top="0" bottom="0" fillColor="0x2d3436" alpha="0.7"/>
+    <eui:Rect id="thumb" width="60" height="8" verticalCenter="0" fillColor="0x636e72"/>
 </eui:Skin>

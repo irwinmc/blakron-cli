@@ -5,6 +5,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseXML, filterElements, getTextContent } from '../src/core/exml/xml-parser.js';
 import {
 	lookupComponent,
@@ -17,6 +20,8 @@ import {
 import { parseEXML } from '../src/core/exml/exml-parser.js';
 import { generateCode } from '../src/core/exml/codegen.js';
 import { compileEXML } from '../src/core/exml/index.js';
+
+const testDir = path.dirname(fileURLToPath(import.meta.url));
 
 // ── XML Parser ───────────────────────────────────────────────────────
 
@@ -62,6 +67,21 @@ describe('parseXML', () => {
 			width: '100',
 			height: '50',
 		});
+	});
+});
+
+describe('game template skins', () => {
+	it('compiles every default EXML skin without unresolved tags', async () => {
+		const skinsDir = path.resolve(testDir, '../templates/game/resource/skins');
+		const files = (await fs.readdir(skinsDir)).filter(file => file.endsWith('.exml'));
+
+		expect(files).toHaveLength(21);
+		for (const file of files) {
+			const source = await fs.readFile(path.join(skinsDir, file), 'utf-8');
+			const ir = parseEXML(source, `skins.${path.basename(file, '.exml')}`);
+			expect(ir.unresolvedTags, file).toEqual([]);
+			expect(() => generateCode(ir), file).not.toThrow();
+		}
 	});
 });
 
@@ -157,6 +177,22 @@ const STATE_EXML = `<?xml version="1.0" encoding="utf-8"?>
 </eui:Skin>`;
 
 describe('States', () => {
+	it('parses root state shorthand and skin constraints', () => {
+		const exml = `<eui:Skin class="skins.RootSkin" states="up,disabled" minWidth="100" minHeight="50" alpha.disabled="0.5" xmlns:eui="http://ns.egret.com/eui"/>`;
+		const ir = parseEXML(exml, 'skins.RootSkin');
+		const code = compileEXML(exml, 'skins.RootSkin');
+
+		expect(ir.states.map(state => state.name)).toEqual(['up', 'disabled']);
+		expect(ir.properties).toEqual([
+			{ name: 'minWidth', state: '', value: { type: 'literal', value: 100 } },
+			{ name: 'minHeight', state: '', value: { type: 'literal', value: 50 } },
+			{ name: 'alpha', state: 'disabled', value: { type: 'literal', value: 0.5 } },
+		]);
+		expect(code).toContain('skin.minWidth = 100');
+		expect(code).toContain('skin.minHeight = 50');
+		expect(code).toContain('new SetProperty("", "alpha", 0.5)');
+	});
+
 	it('parses state definitions', () => {
 		const ir = parseEXML(STATE_EXML, 'skins.StateSkin');
 		expect(ir.states).toHaveLength(3);
@@ -171,6 +207,18 @@ describe('States', () => {
 		const stateProps = btn.properties.filter(p => p.state);
 		expect(stateProps).toHaveLength(2);
 		expect(stateProps.find(p => p.state === 'down')?.value).toEqual({ type: 'literal', value: 'Down' });
+	});
+
+	it('generates AddItems for includeIn and excludeFrom', () => {
+		const exml = `<eui:Skin class="skins.VisibilitySkin" states="up,down,disabled" xmlns:eui="http://ns.egret.com/eui">
+			<eui:Label id="included" includeIn="up,down"/>
+			<eui:Label id="excluded" excludeFrom="disabled"/>
+		</eui:Skin>`;
+		const code = compileEXML(exml, 'skins.VisibilitySkin');
+
+		expect(code).not.toContain('skin.elementsContent = [included');
+		expect(code).toContain('new AddItems("included", "", -1, "elementsContent")');
+		expect(code).toContain('new AddItems("excluded", "", -1, "elementsContent")');
 	});
 });
 

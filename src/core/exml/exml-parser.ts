@@ -125,6 +125,13 @@ class ParseContext {
 				}
 			} else if (attr.name === 'xmlns' || attr.name.startsWith('xmlns:')) {
 				// Skip namespace declarations
+			} else {
+				const dotIndex = attr.name.indexOf('.');
+				this.rootProperties.push({
+					name: dotIndex >= 0 ? attr.name.substring(0, dotIndex) : attr.name,
+					state: dotIndex >= 0 ? attr.name.substring(dotIndex + 1) : '',
+					value: this.parseValue(attr.value),
+				});
 			}
 		}
 
@@ -167,6 +174,7 @@ class ParseContext {
 	 */
 	private _width?: PropertyValue;
 	private _height?: PropertyValue;
+	private rootProperties: PropertyAssignment[] = [];
 
 	/**
 	 * Collect state definitions from children.
@@ -424,11 +432,17 @@ class ParseContext {
 	private collectStateOverrides(): void {
 		// Process includeIn/excludeFrom on nodes → generate AddItems overrides
 		for (const node of this.allNodes) {
-			if (node.includeIn.length > 0) {
+			const includedStates =
+				node.includeIn.length > 0
+					? node.includeIn
+					: node.excludeFrom.length > 0
+						? this.states.map(state => state.name).filter(name => !node.excludeFrom.includes(name))
+						: [];
+			if (includedStates.length > 0) {
 				// Node should only exist in specified states
 				// Generate AddItems for each state, and the node is NOT added to
 				// elementsContent by default — it's only added via state overrides
-				for (const stateName of node.includeIn) {
+				for (const stateName of includedStates) {
 					this.addStateOverride(stateName, {
 						type: 'AddItems',
 						targetId: node.id ?? node.varName,
@@ -491,6 +505,7 @@ class ParseContext {
 			superClassName: 'Skin',
 			width,
 			height,
+			properties: this.rootProperties,
 			imports: this.imports,
 			skinParts: this.skinParts,
 			children: this.allNodes,
