@@ -5,6 +5,13 @@ All notable changes to `@blakron/cli` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.1 — 2026-08-06
+
+### Changed
+
+- **HSliderSkin / VSliderSkin**: tracks now use `width="100%"` / `height="100%"` instead of inset `left`/`right` / `top`/`bottom` constraints, aligning with the `@blakron/ui` 1.1.0 fix that positions the thumb relative to the track's layout bounds.
+- **TextInputSkin**: `textDisplay` and `promptDisplay` now use explicit `width`/`height` with `verticalCenter` instead of stretch-to-fill `left`/`right`/`top`/`bottom`. `promptDisplay` sets `multiline="false"` / `wordWrap="false"` to prevent accidental wrapping of placeholder text.
+
 ## 0.7.0 - 2026-08-06
 
 ### Added

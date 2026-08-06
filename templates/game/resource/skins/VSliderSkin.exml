@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <eui:Skin class="skins.VSliderSkin" minWidth="30" minHeight="30"
     xmlns:eui="http://ns.egret.com/eui">
-    <eui:Rect id="track" top="10" bottom="10" width="6" horizontalCenter="0"
+    <eui:Rect id="track" width="6" height="100%" horizontalCenter="0"
         fillColor="0x2d3436"
         strokeColor="0x636e72"
         strokeWeight="1"/>
