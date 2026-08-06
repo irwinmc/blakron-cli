@@ -1,9 +1,15 @@
 {
 	"groups": [
 		{
-			"keys": "",
+			"keys": "eui",
 			"name": "preload"
 		}
 	],
-	"resources": []
+	"resources": [
+		{
+			"name": "eui",
+			"type": "sheet",
+			"url": "assets/eui.json"
+		}
+	]
 }

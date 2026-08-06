@@ -89,6 +89,15 @@ class CodeGen {
 			moduleImports.get('@blakron/ui')!.add('Binding');
 		}
 
+		// Egret encodes Rectangle-valued properties such as scale9Grid as a
+		// comma-separated EXML attribute (for example "1,3,8,8").
+		if (this.hasPropertyInTree('scale9Grid')) {
+			if (!moduleImports.has('@blakron/core')) {
+				moduleImports.set('@blakron/core', new Set());
+			}
+			moduleImports.get('@blakron/core')!.add('Rectangle');
+		}
+
 		// Ensure State, AddItems, SetProperty are imported if we have states
 		if (this.ir.states.length > 0) {
 			if (!moduleImports.has('@blakron/ui')) {
@@ -235,7 +244,7 @@ class CodeGen {
 			return;
 		}
 
-		this.line(`${target}.${prop} = ${this.valueToJS(value)};`);
+		this.line(`${target}.${prop} = ${this.propertyValueToJS(prop, value)};`);
 	}
 
 	private emitBinding(target: string, prop: string, expression: string): void {
@@ -336,7 +345,7 @@ class CodeGen {
 			}
 			case 'SetProperty': {
 				const o = override as StateSetProperty;
-				return `new SetProperty("${o.targetId}", "${o.name}", ${this.valueToJS(o.value)})`;
+				return `new SetProperty("${o.targetId}", "${o.name}", ${this.propertyValueToJS(o.name, o.value)})`;
 			}
 			default:
 				return '/* unknown override */';
@@ -380,6 +389,16 @@ class CodeGen {
 		}
 	}
 
+	private propertyValueToJS(prop: string, value: PropertyValue): string {
+		if (prop === 'scale9Grid' && value.type === 'literal' && typeof value.value === 'string') {
+			const parts = value.value.split(',').map(part => Number(part.trim()));
+			if (parts.length === 4 && parts.every(Number.isFinite)) {
+				return `new Rectangle(${parts.join(', ')})`;
+			}
+		}
+		return this.valueToJS(value);
+	}
+
 	// ── Utilities ─────────────────────────────────────────────────────
 
 	private line(text: string): void {
@@ -406,6 +425,18 @@ class CodeGen {
 			if (this.hasBindingsInTree(node.children)) return true;
 		}
 		return false;
+	}
+
+	private hasPropertyInTree(propertyName: string): boolean {
+		if (this.ir.properties.some(prop => prop.name === propertyName)) return true;
+		const visit = (nodes: readonly SkinNode[]): boolean => {
+			for (const node of nodes) {
+				if (node.properties.some(prop => prop.name === propertyName)) return true;
+				if (visit(node.children)) return true;
+			}
+			return false;
+		};
+		return visit(this.ir.children) || visit(this.ir.declarations);
 	}
 }
 

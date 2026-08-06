@@ -3,20 +3,20 @@
     states="normal,disabled,normalWithPrompt,disabledWithPrompt"
     xmlns:eui="http://ns.egret.com/eui">
     <eui:Rect width="100%" height="100%"
-        fillColor="0x1a1a2e"
-        fillColor.disabled="0x16213e"
-        strokeColor="0x636e72"
-        strokeColor.normal="0x0f3460"
-        strokeColor.disabled="0x4a5459"
-        strokeWeight="1"/>
-    <eui:EditableText id="textDisplay" left="10" right="10" verticalCenter="0" height="24"
+        fillColor="0xffffff"
+        alpha.disabled="0.5"/>
+    <eui:EditableText id="textDisplay"
+        left="10" right="10" verticalCenter="0" height="24"
         verticalAlign="middle"
-        textColor="0xdfe6e9"
-        size="14"/>
-    <eui:Label id="promptDisplay" left="10" right="10" verticalCenter="0" height="24"
-        touchEnabled="false" includeIn="normalWithPrompt,disabledWithPrompt"
+        textColor="0x000000"
+        textColor.disabled="0xff0000"
+        size="20"/>
+    <eui:Label id="promptDisplay"
+        left="10" right="10" verticalCenter="0" height="24"
+        touchEnabled="false"
+        includeIn="normalWithPrompt,disabledWithPrompt"
         multiline="false" wordWrap="false"
         verticalAlign="middle"
-        textColor="0x636e72"
-        size="14"/>
+        textColor="0xa9a9a9"
+        size="20"/>
 </eui:Skin>

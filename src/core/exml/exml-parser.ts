@@ -345,10 +345,14 @@ class ParseContext {
 		const propertyChildren: PropertyChild[] = [];
 
 		for (const child of filterElements(el.children)) {
-			// Property node? (e.g. <eui:Button.label>)
-			if (isPropertyNode(child.name)) {
+			// Property node? Egret accepts both owner-qualified nodes such as
+			// <eui:Button.label> and lowercase shorthand such as <eui:layout>.
+			const childClass = localName(child.name);
+			const isLowerProperty = childClass.length > 0 && childClass[0] === childClass[0].toLowerCase();
+			if (isPropertyNode(child.name) || isLowerProperty) {
 				const parsed = parsePropertyNode(child.name);
-				if (parsed) {
+				const propertyName = parsed?.property ?? (isLowerProperty ? childClass : '');
+				if (propertyName) {
 					const childNodes: (SkinNode | string)[] = [];
 					// Check for text content
 					const text = getTextContent(child.children).trim();
@@ -361,7 +365,7 @@ class ParseContext {
 						if (node) childNodes.push(node);
 					}
 					propertyChildren.push({
-						propertyName: parsed.property,
+						propertyName,
 						nodes: childNodes,
 					});
 				}

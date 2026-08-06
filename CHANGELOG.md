@@ -5,6 +5,25 @@ All notable changes to `@blakron/cli` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 — 2026-08-06
+
+### Added
+
+- **`scale9Grid` attribute compiled to `new Rectangle()`** — EXML attributes like `scale9Grid="1,3,8,8"` are now compiled to `new Rectangle(1, 3, 8, 8)` instead of being passed as a raw string. Core `Rectangle` is automatically imported when a skin contains any `scale9Grid` property.
+- **Lowercase property-node shorthand** — `<eui:layout><eui:HorizontalLayout/></eui:layout>` is now accepted as a shorthand for the Egret-qualified `<eui:Group.layout>` tag, bringing EXML parsing closer to Egret's original behaviour.
+- **Game template: resource-aware asset adapter** — `Main.ts` now installs a custom `AssetAdapter` that resolves EXML `source` strings through `resource.get<Texture>()` first (supports preloaded atlases and sprite sheets), falling back to the default URL-based `ImageLoader`.
+
+### Changed
+
+- **Updated all game-template skins** — Button, CheckBox, HScrollBar, HSlider, ItemRenderer, Panel, ProgressBar, RadioButton, TextInput, ToggleSwitch, VScrollBar, and VSlider skins modernised with consistent constraints, state names, and sizing conventions matching Egret EUI defaults.
+- Release builds now fail on invalid EXML instead of silently publishing an empty skin stub; development builds continue with a warning for faster iteration.
+
+### Tests
+
+- `test/exml-parser.test.ts`: 2 new cases (scale9Grid Rectangle compilation, lowercase property-node shorthand).
+
+---
+
 ## 0.7.2 — 2026-08-06
 
 ### Changed

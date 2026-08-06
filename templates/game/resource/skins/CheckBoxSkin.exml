@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<eui:Skin class="skins.CheckBoxSkin" height="28" minWidth="28"
+<eui:Skin class="skins.CheckBoxSkin"
     states="up,down,disabled,upAndSelected,downAndSelected,disabledAndSelected"
     xmlns:eui="http://ns.egret.com/eui">
-    <eui:Rect id="box" left="0" verticalCenter="0" width="20" height="20"
-        fillColor="0x2d3436"
-        fillColor.down="0x636e72"
-        fillColor.disabled="0x4a5459"
-        fillColor.upAndSelected="0x6c5ce7"
-        fillColor.downAndSelected="0x5a4bd1"
-        fillColor.disabledAndSelected="0x4a5459"
-        strokeColor="0x636e72"
-        strokeWeight="1"/>
-    <eui:Label id="labelDisplay" left="28" right="0" top="0" bottom="0"
-        verticalAlign="middle"
-        textColor="0xdfe6e9"
-        textColor.disabled="0x636e72"
-        size="14"/>
+    <eui:Group width="100%" height="100%">
+        <eui:layout>
+            <eui:HorizontalLayout verticalAlign="middle"/>
+        </eui:layout>
+        <eui:Image fillMode="scale"
+            alpha="1" alpha.disabled="0.5" alpha.down="0.7"
+            source="checkbox_unselect_png"
+            source.upAndSelected="checkbox_select_up_png"
+            source.downAndSelected="checkbox_select_down_png"
+            source.disabledAndSelected="checkbox_select_disabled_png"/>
+        <eui:Label id="labelDisplay" size="20" textColor="0x707070"
+            textAlign="center" verticalAlign="middle" fontFamily="Tahoma"/>
+    </eui:Group>
 </eui:Skin>

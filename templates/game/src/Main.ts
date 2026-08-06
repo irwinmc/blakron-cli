@@ -6,8 +6,8 @@
  *
  * 生命周期：constructor → ADDED_TO_STAGE → $onAddToStage → runGame → loadResource → createGameScene → startAnimation
  */
-import { createPlayer, TextField, Shape, Event, Stage, resource } from '@blakron/core';
-import { Button, Theme, UILayer } from '@blakron/ui';
+import { createPlayer, TextField, Shape, Event, Stage, Texture, resource } from '@blakron/core';
+import { Button, DefaultAssetAdapter, Theme, UILayer, setAssetAdapter } from '@blakron/ui';
 import { Tween } from '@blakron/game';
 import { LoadingUI } from './LoadingUI';
 
@@ -25,9 +25,28 @@ class Main extends UILayer {
 
 	private async runGame(stage: Stage): Promise<void> {
 		await this.loadResource(stage);
+		this.installResourceAssetAdapter();
 		await this.loadTheme();
 		this.createGameScene(stage);
 		this.startAnimation();
+	}
+
+	/**
+	 * 让 EXML 中的 source="button_up_png" 优先解析为预加载图集的子纹理，
+	 * 普通 URL 图片仍交给默认适配器加载。
+	 */
+	private installResourceAssetAdapter(): void {
+		const fallback = new DefaultAssetAdapter();
+		setAssetAdapter({
+			getAsset: (source, callback) => {
+				const texture = resource.get<Texture>(source);
+				if (texture) {
+					callback(texture, source);
+					return;
+				}
+				fallback.getAsset(source, callback);
+			},
+		});
 	}
 
 	private async loadResource(stage: Stage): Promise<void> {

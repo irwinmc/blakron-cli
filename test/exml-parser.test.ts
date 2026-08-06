@@ -172,6 +172,32 @@ describe('Code Generator', () => {
 		const code = compileEXML(SIMPLE_EXML, 'skins.SimpleSkin');
 		expect(code).toContain('skin.elementsContent = [btn, title]');
 	});
+
+	it('compiles scale9Grid attributes to Rectangle values', () => {
+		const code = compileEXML(
+			`<eui:Skin class="skins.Scale9Skin" xmlns:eui="http://ns.egret.com/eui">
+				<eui:Image scale9Grid="1,3,8,8" source="button_up_png"/>
+			</eui:Skin>`,
+			'skins.Scale9Skin',
+		);
+
+		expect(code).toContain('import { Rectangle } from "@blakron/core"');
+		expect(code).toContain('scale9Grid = new Rectangle(1, 3, 8, 8)');
+	});
+
+	it('compiles nested lowercase property nodes', () => {
+		const code = compileEXML(
+			`<eui:Skin class="skins.LayoutSkin" xmlns:eui="http://ns.egret.com/eui">
+				<eui:Group>
+					<eui:layout><eui:HorizontalLayout verticalAlign="middle"/></eui:layout>
+				</eui:Group>
+			</eui:Skin>`,
+			'skins.LayoutSkin',
+		);
+
+		expect(code).toContain('new HorizontalLayout()');
+		expect(code).toContain('_group1.layout = _horizontalLayout2');
+	});
 });
 
 // ── States ───────────────────────────────────────────────────────────
