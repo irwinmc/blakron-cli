@@ -3,6 +3,8 @@
 CLI tool for the Blakron game engine — a modern replacement for the legacy Egret CLI. Powered by esbuild for fast compilation, with a built-in EXML skin parser and code generator.
 
 > Migrating from Egret? See [migration.md](docs/migration.md)
+>
+> Release history: [CHANGELOG.md](CHANGELOG.md)
 
 ## Usage
 
@@ -65,7 +67,7 @@ blakron create <name> [options]
 
 ### `blakron build`
 
-Compile and bundle the project into a single self-contained ESM bundle.
+Compile the project into ESM application, engine, namespace, and theme bundles.
 
 ```bash
 blakron build [options]
@@ -133,6 +135,10 @@ export default {
 	// Optional: enable EXML skin compilation
 	exml: {
 		themeFile: 'resource/default.thm.json',
+		// Optional: map a custom EXML prefix to a source barrel file
+		namespaces: {
+			game: 'src/ui/index.ts',
+		},
 	},
 };
 ```
@@ -151,6 +157,7 @@ export default {
 | `stage.frameRate`   | `number` | Frame rate — must be a positive integer                                                                                  |
 | `stage.background`  | `string` | Background color (e.g. `'#000000'`)                                                                                      |
 | `exml.themeFile`    | `string` | Theme JSON file path                                                                                                     |
+| `exml.namespaces`   | `Record<string, string>` | Optional EXML prefix → source barrel-file mapping                                                          |
 
 ## EXML Skin Compiler
 
@@ -162,9 +169,16 @@ The CLI includes a complete EXML skin parsing and code generation pipeline (XML 
 - **AST / IR Generation** — converts to an intermediate representation (SkinIR)
 - **Code Generation** — outputs ESM factory functions
 - **Component Registry** — built-in `eui:*` / `egret:*` namespace mapping to `@blakron/ui` / `@blakron/core`
-- **View States** — parses `<eui:State>` and state-specific property overrides like `label.up="Down"`
+- **Custom Namespaces** — maps project prefixes such as `game:*` to source barrel files through `exml.namespaces`
+- **View States** — supports `<eui:states>`, shorthand `states="up,down"`, state properties, `includeIn`, and `excludeFrom`
+- **Skin Properties** — preserves root properties such as `minWidth`, `minHeight`, and state-specific values
 - **Percent Layout** — auto-detects `width="100%"` and converts to `percentWidth`
 - **Data Binding** — parses `{expression}` binding syntax and generates `Binding.bindProperty` calls
+
+The standard declarations `xmlns:eui="http://ns.egret.com/eui"` and
+`xmlns:egret="http://ns.egret.com/egret"` are namespace identifiers. The CLI
+resolves their prefixes internally and does not access those URLs over the
+network, so the original Egret namespace pages do not need to be hosted.
 
 ### Compilation Pipeline
 

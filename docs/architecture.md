@@ -1,159 +1,180 @@
 # @blakron/cli 架构文档
 
-> 更新日期：2026-06-06
-
----
+> 适用版本：0.7.0（更新日期：2026-08-06）
 
 ## 一、概述
 
-`@blakron/cli` 是 Blakron 游戏引擎的命令行工具，替代旧 Egret 的 `egret` CLI。
+`@blakron/cli` 是 Blakron 游戏引擎的命令行工具，用于替代 Egret CLI 的 Web 项目创建、开发、构建和发布能力。
 
-| 维度      | 旧 Egret CLI                              | Blakron CLI                |
-| --------- | ----------------------------------------- | -------------------------- |
-| CLI 框架  | 手写参数解析                              | commander.js               |
-| TS 编译器 | typescript-plus（魔改 tsc）               | esbuild                    |
-| 配置文件  | egretProperties.json + index.html data-\* | blakron.config.ts          |
-| 构建编排  | publish.js 插件管线                       | BuildPlugin 管线（同思路） |
-| 模块系统  | CommonJS                                  | ESM                        |
+| 维度 | Egret CLI | Blakron CLI |
+| --- | --- | --- |
+| CLI 框架 | 自有命令系统 | Commander.js |
+| TypeScript 构建 | typescript-plus | esbuild |
+| 配置 | `egretProperties.json` + HTML `data-*` | `blakron.config.ts` |
+| 构建编排 | 插件管线 | `BuildPlugin` 管线 |
+| 浏览器模块 | 经典脚本/全局命名空间 | ESM + import map |
+| 依赖管理 | Egret modules | npm/pnpm packages |
 
-设计上沿用了 Egret CLI `publish.js` 的核心思路——**可组合的插件管线**：构建过程
-被拆成若干具名步骤，依次在共享的上下文上执行。区别在于全程 TypeScript + ESM +
-async/await，并以 esbuild 取代魔改版 tsc。
-
----
+构建过程由一组有序插件组成。插件共享一个 `BuildContext`，通过 `ctx.outputs` 传递入口脚本、主题脚本、引擎 chunk 和自定义 namespace chunk 等产物信息。
 
 ## 二、目录结构
 
-```
+```text
 packages/cli/
 ├── src/
-│   ├── index.ts              # 入口（commander 注册命令）
-│   ├── define.ts             # 对外导出配置类型
-│   ├── commands/             # 命令层：解析参数 → 组装管线
-│   │   ├── build.ts          #   blakron build
-│   │   ├── dev.ts            #   blakron dev
-│   │   ├── create.ts         #   blakron create <name>
-│   │   └── clean.ts          #   blakron clean
+│   ├── index.ts                       # CLI 入口和命令注册
+│   ├── define.ts                      # 对外导出配置类型
+│   ├── commands/
+│   │   ├── build.ts                   # blakron build
+│   │   ├── dev.ts                     # blakron dev
+│   │   ├── create.ts                  # blakron create
+│   │   └── clean.ts                   # blakron clean
 │   ├── core/
-│   │   ├── config.ts         # 加载并校验 blakron.config
-│   │   ├── project.ts        # Project 模型：解析配置 + 绝对路径
-│   │   ├── pipeline.ts       # BuildContext / BuildPlugin / runPipeline
-│   │   ├── dev-server.ts     # 开发服务器（复用管线 + 文件监听）
-│   │   ├── template.ts       # 项目脚手架
-│   │   ├── errors.ts         # BuildError / ConfigError
-│   │   ├── plugins/          # 构建步骤（每个一个具名插件）
-│   │   │   ├── index.ts          #   defaultPlugins() 标准顺序
-│   │   │   ├── compile-exml.ts    #   EXML → 主题输出
-│   │   │   ├── compile-engine.ts  #   @blakron/* → js/ 独立 chunk
-│   │   │   ├── compile-source.ts  #   esbuild 打包用户源码
-│   │   │   ├── generate-html.ts   #   生成 index.html（含 import map）
-│   │   │   ├── manifest.ts        #   release 写 manifest.json
-│   │   │   └── copy-assets.ts     #   复制 resource/
-│   │   └── exml/             # EXML 解析与代码生成（XML → SkinIR → JS）
+│   │   ├── config.ts                  # 加载并校验配置
+│   │   ├── project.ts                 # 解析项目路径、依赖和 namespace
+│   │   ├── pipeline.ts                # BuildContext / BuildPlugin
+│   │   ├── dev-server.ts              # 静态服务器与监听
+│   │   ├── template.ts                # 项目脚手架
+│   │   ├── namespace-external-plugin.ts
+│   │   ├── plugins/
+│   │   │   ├── compile-exml.ts
+│   │   │   ├── compile-engine.ts
+│   │   │   ├── compile-custom-namespaces.ts
+│   │   │   ├── compile-source.ts
+│   │   │   ├── generate-html.ts
+│   │   │   ├── manifest.ts
+│   │   │   └── copy-assets.ts
+│   │   └── exml/                      # XML → SkinIR → ESM
 │   └── utils/
-│       ├── fs.ts             # 文件系统工具
-│       └── logger.ts         # 彩色日志输出
-└── templates/
-    ├── game/                 # 默认游戏模板（含 EXML 皮肤）
-    └── empty/                # 最小化模板（纯 @blakron/core）
+├── templates/
+│   ├── game/                          # 含资源、主题和默认皮肤
+│   └── empty/                         # 仅依赖 @blakron/core
+└── test/
 ```
 
----
+## 三、构建上下文与插件顺序
 
-## 三、构建管线
+标准构建顺序由 `defaultPlugins()` 定义：
 
-构建被建模为 `BuildPlugin[]`，由 `runPipeline()` 依次执行。每个插件读取不可变的
-`project` / 选项，并通过 `ctx.outputs` 把结果传递给后续插件。
-
+```text
+compile EXML
+  ↓
+compile engine
+  ↓
+compile custom namespaces
+  ↓
+compile source
+  ↓
+generate index.html
+  ↓
+write manifest.json（仅 release）
+  ↓
+copy assets
 ```
-BuildContext { project, sourcemap, analyze, watch, outputs, disposers }
 
-defaultPlugins():
-  compile EXML      → 编译 .exml，写入主题文件
-  compile engine    → 每个 @blakron/* 包打成 js/blakron.<name>.js 独立 chunk
-  compile source    → esbuild 打包用户源码，回填 outputs.entryScript
-  generate index.html → import map(引擎) + 入口脚本
-  write manifest.json → 仅 release：{ initial:[引擎], game:[main] }
-  copy assets       → 复制 resource/（跳过主题文件）
+各阶段职责如下：
+
+1. `compileExml`：读取主题配置，编译 EXML，并生成主题 ESM bundle。
+2. `compileEngine`：把 `package.json` 中的 `@blakron/*` 运行时依赖分别打成 chunk。
+3. `compileCustomNamespaces`：把 `exml.namespaces` 指定的 barrel file 分别打成 `ns.<prefix>` chunk。
+4. `compileSource`：开发模式按源文件输出；发布模式生成压缩且带 hash 的应用 bundle。
+5. `generateHtml`：生成 canvas、import map 和 ESM 入口脚本。
+6. `writeManifest`：发布模式生成 Egret 形状的 `manifest.json`。
+7. `copyAssets`：复制 `resource/`，并在启用 EXML 时跳过源主题文件和 `.exml` 文件。
+
+顺序不能随意交换。自定义 namespace 必须先于应用源码编译，以便应用和皮肤都通过 `#ns/<prefix>` 指向同一个模块实例，避免重复打包导致类身份不一致。
+
+## 四、模块拆分与 import map
+
+CLI 不会生成单一的自包含文件。引擎、项目 namespace、主题和应用代码分别构建：
+
+```text
+@blakron/core ───────────────→ js/blakron.core[.min_<hash>].js
+@blakron/ui ─────────────────→ js/blakron.ui[.min_<hash>].js
+src/ui/index.ts ─────────────→ js/ns.game[.min_<hash>].js
+resource/**/*.exml ──────────→ js/default.thm[.min_<hash>].js
+src/Main.ts ─────────────────→ Main.js 或 js/main.min_<hash>.js
 ```
 
-引擎包与源码互为外部依赖（`external`），引擎只在自己的 chunk 里出现一次，靠 HTML
-import map 把裸 `@blakron/*` 解析到对应 chunk——既对齐 Egret 的拆分模块布局，又保持
-ESM / npm 路线，引擎代码不会重复进 app bundle。
+HTML import map 将 `@blakron/*` 和 `#ns/*` 裸 specifier 映射到对应 chunk。应用 bundle、引擎 bundle和皮肤 bundle因此共享相同的模块实例。
 
-`build` 与 `dev` 命令复用同一组插件，只是 `dev` 额外挂上 HTTP 服务与
-`resource/` 监听。
+## 五、产物结构
 
----
+### Development
 
-## 四、产物结构（对齐 Egret 形状）
+默认输出目录为 `bin-debug/`，可通过 `output.dir` 修改：
 
-**development（`bin-debug/`）—— 逐文件、保留目录**
-
-```
+```text
 bin-debug/
-├── index.html              # import map + <script type=module src=Main.js>
-├── Main.js                 # src/Main.ts，保留目录结构
-├── com/akakata/LoadingUI.js
-├── js/                     # 引擎 chunk（external 互引）
-│   ├── blakron.core.js
-│   ├── blakron.ui.js
-│   └── blakron.game.js
-├── js/default.thm.js          # 编译后的皮肤模块（注册到 globalThis）
-└── resource/...               # 资源树 + default.thm.json（仅映射 + skinsJs 指针）
-```
-
-**release（`bin-release/web/<timestamp>/`）—— 压缩、hash、manifest**
-
-```
-bin-release/web/260607010725/
 ├── index.html
-├── manifest.json           # { initial:[引擎 chunk...], game:[main] }
+├── Main.js
+├── LoadingUI.js
+├── js/
+│   ├── blakron.core.js
+│   ├── blakron.game.js
+│   ├── blakron.ui.js
+│   ├── ns.game.js                 # 仅配置自定义 namespace 时存在
+│   └── default.thm.js             # 仅启用 EXML 且找到皮肤时存在
+└── resource/
+    ├── default.res.json
+    ├── default.thm.json           # skins 映射 + skinsJs
+    └── ...                        # 不包含已编译的 .exml
+```
+
+开发模式会为 `src/**/*.ts` 创建保持相对目录的 ESM 输出。已被自定义 namespace chunk 打包的源码不会再次作为独立入口输出。
+
+### Release
+
+发布输出固定在 `bin-release/web/<YYMMDDHHmmss>/`：
+
+```text
+bin-release/web/260806143805/
+├── index.html
+├── manifest.json
 ├── js/
 │   ├── blakron.core.min_<hash>.js
-│   ├── blakron.ui.min_<hash>.js
 │   ├── blakron.game.min_<hash>.js
-│   └── main.min_<hash>.js  # 用户源码合并压缩
-└── resource/...
+│   ├── blakron.ui.min_<hash>.js
+│   ├── ns.game.min_<hash>.js       # 可选
+│   ├── default.thm.min_<hash>.js   # 可选
+│   └── main.min_<hash>.js
+└── resource/
+    ├── default.res.json
+    ├── default.thm.json
+    └── ...
 ```
 
-与 Egret 的差异：脚本是 ESM module（非经典全局脚本），启动用用户代码里的
-`createPlayer()`（非 `data-entry-class` 自举）。皮肤编译成独立的 `js/default.thm.js`
-模块（release 带 hash），`default.thm.json` 只留映射 + `skinsJs` 指针，运行时
-`Theme` 动态 `import()` 它。`resource/`、`default.res.json`、`default.thm.json`
-保持固定名（被源码硬编码路径引用），不加 hash。
+`manifest.json` 的 `initial` 包含引擎和自定义 namespace chunk，`game` 包含主题脚本（存在时）和应用入口。浏览器实际启动仍由 `index.html` 中的 ESM 入口完成。
 
----
+## 六、命令与监听模型
 
-## 五、命令说明
+### `blakron build`
 
-### `blakron build [-r|--release] [--sourcemap] [--watch] [--analyze]`
+```text
+blakron build [-r|--release] [--sourcemap] [--watch] [--analyze]
+```
 
-| 模式           | 产物布局                                                                               |
-| -------------- | -------------------------------------------------------------------------------------- |
-| development    | `bin-debug/`：逐文件 `.js` + `js/` 引擎 chunk                                          |
-| release (`-r`) | `bin-release/web/<timestamp>/`：`js/main.min_<hash>.js` + 引擎 chunk + `manifest.json` |
+- 默认执行 development build。
+- `--release` 开启压缩、hash 文件名和 release 目录。
+- `--watch` 始终使用 development 模式；与 `--release` 同时使用时会忽略 release。
+- `--analyze` 输出 release 应用 bundle 的 esbuild 分析。
 
-### `blakron dev [-p|--port <port>] [--sourcemap]`
+### `blakron dev`
 
-运行一次构建管线（esbuild watch 持续重编译 `main.js`），并启动静态文件服务器。
-`resource/` 下 `.exml` 变更会触发主题重编译。浏览器不自动刷新，手动刷新即可。
+```text
+blakron dev [-p|--port <port>] [--sourcemap]
+```
 
-### `blakron create <name> [--template game|empty]`
+执行开发构建并启动静态服务器。esbuild 监听应用源码和自定义 namespace；`resource/` 监听器在 `.exml` 变化时重新编译主题并复制资源。引擎依赖或其他静态资源变化后应重新启动 dev server。当前没有浏览器自动刷新，需要手动刷新页面。
 
-从 `templates/<template>/` 复制到 `./<name>/`，并写入 `package.json` 的 `name`。
+### `blakron create` 与 `blakron clean`
 
-### `blakron clean`
+- `blakron create <name> [--template game|empty]` 创建项目，并把 CLI 固定为当前版本；运行时包优先解析 npm 最新版本，registry 不可用时保留 `latest`。
+- `blakron clean` 删除 `bin-debug` 和 `bin-release`。
 
-删除 `bin-debug` 与 `bin-release`。
+## 七、配置模型
 
----
-
-## 五、配置文件
-
-`blakron.config.ts` 替代旧的 `egretProperties.json` + `index.html data-*`：
-
-```typescript
+```ts
 export default {
 	target: 'html5',
 	entry: 'src/Main.ts',
@@ -166,31 +187,34 @@ export default {
 		frameRate: 60,
 		background: '#000000',
 	},
-	// 可选：EXML 配置
 	exml: {
 		themeFile: 'resource/default.thm.json',
+		namespaces: {
+			game: 'src/ui/index.ts',
+		},
 	},
 };
 ```
 
-所有字段均有默认值，可整体省略。
+配置文件可以是 `blakron.config.ts` 或 `blakron.config.js`。未提供配置文件时使用默认值；用户配置会与默认 `stage` 配置合并。当前只支持 `html5` target。
 
----
+## 八、EXML 编译
 
-## 六、EXML 编译
+EXML 管线为：
 
-`.exml` 皮肤统一编译成**一个 ESM 模块**:
-
-```
-resource/skins/*.exml
-   → 每个皮肤生成 ESM 工厂(import { Skin, ... } from '@blakron/ui'; export function createXxx)
-   → esbuild 打包(引擎 external,release 压缩+hash)
-   → js/default.thm.js  /  js/default.thm.min_<hash>.js
+```text
+XML source → XElement tree → SkinIR → per-skin ESM factory
+           → esbuild theme bundle → globalThis skin registration
 ```
 
-该模块加载时把每个工厂注册到 `globalThis['<皮肤类名>']`。`default.thm.json`
-只写 `skins`(host→类名)映射 + `skinsJs`(指向上面的模块,相对 thm.json),运行时
-`Theme` 读映射并 `import()` 该模块完成皮肤注册。产物不含原始 `.exml`。
+主题输入兼容 Egret 常见字段：
 
-EXML 解析与代码生成位于 `core/exml/`,管线(`xml-parser → exml-parser →
-codegen`）独立于 CLI，可单独测试。
+- `skins` 的值可以是 EXML 路径或皮肤类名；
+- `autoGenerateExmlsList: false` 配合非空 `exmls` 时按显式列表编译；
+- 其他情况递归扫描 `resource/**/*.exml`。
+
+输出主题删除 `exmls` 和 `autoGenerateExmlsList`，将可解析的皮肤路径改写为类名，并加入相对于主题 JSON 的 `skinsJs` 路径。
+
+0.7.0 编译器支持常用组件、属性节点、百分比尺寸、数据绑定、根 Skin 属性、`<eui:states>`、states 简写、状态属性、`includeIn` 和 `excludeFrom`。内置 namespace 按前缀解析；`http://ns.egret.com/eui` 只是 XML namespace 标识符，不会发起网络请求。
+
+当前解析器面向 EXML 子集，不支持 DTD、ENTITY 和带 namespace 的属性。未知组件会被警告并丢弃，单个皮肤编译失败时会生成空工厂并继续构建，因此迁移大型 Egret 项目时应检查全部构建警告和页面行为。
