@@ -56,6 +56,7 @@ async function buildDevelopment(ctx: BuildContext): Promise<void> {
 		outdir: project.outputDir,
 		outbase: project.srcDir,
 		entryNames: '[dir]/[name]',
+		chunkNames: 'js/chunks/[name]-[hash]',
 		splitting: true,
 		sourcemap: ctx.sourcemap,
 		external: [...project.enginePackages, ...project.customNamespaces.map(ns => ns.specifier)],

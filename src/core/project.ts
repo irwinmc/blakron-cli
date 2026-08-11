@@ -66,6 +66,10 @@ export interface Project {
 	 */
 	readonly resourceDir: string;
 	/**
+	 * Absolute path to the project-owned HTML template, when configured.
+	 */
+	readonly htmlTemplate?: string;
+	/**
 	 * Absolute path to the theme file, when EXML is enabled.
 	 */
 	readonly themeFile?: string;
@@ -107,6 +111,7 @@ export async function loadProject(mode: BuildMode): Promise<Project> {
 		srcDir: path.resolve(root, 'src'),
 		outputDir,
 		resourceDir: path.resolve(root, 'resource'),
+		htmlTemplate: config.html ? path.resolve(root, config.html.template) : undefined,
 		themeFile: config.exml ? path.resolve(root, config.exml.themeFile) : undefined,
 		enginePackages: detectEnginePackages(root),
 		customNamespaces: resolveCustomNamespaces(root, config.exml?.namespaces),

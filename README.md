@@ -124,13 +124,13 @@ export default {
 	target: 'html5',
 	entry: 'src/Main.ts',
 	output: { dir: 'bin-debug' },
+	html: { template: 'template/web/index.html' },
 	stage: {
 		width: 640,
 		height: 1136,
 		scaleMode: 'showAll',
 		orientation: 'auto',
 		frameRate: 60,
-		background: '#000000',
 	},
 	// Optional: enable EXML skin compilation
 	exml: {
@@ -150,14 +150,37 @@ export default {
 | `target`            | `string` | Build target — currently only `'html5'`                                                                                  |
 | `entry`             | `string` | Entry file path, default `'src/Main.ts'`                                                                                 |
 | `output.dir`        | `string` | Output directory, default `'bin-debug'`                                                                                  |
+| `html.template`     | `string` | Optional project-owned HTML template; the CLI default page is used when omitted                                          |
 | `stage.width`       | `number` | Stage width                                                                                                              |
 | `stage.height`      | `number` | Stage height                                                                                                             |
 | `stage.scaleMode`   | `string` | Scale mode: `showAll` / `noScale` / `exactFit` / `noBorder` / `fixedHeight` / `fixedWidth` / `fixedNarrow` / `fixedWide` |
 | `stage.orientation` | `string` | Orientation: `auto` / `portrait` / `landscape`                                                                           |
 | `stage.frameRate`   | `number` | Frame rate — must be a positive integer                                                                                  |
-| `stage.background`  | `string` | Background color (e.g. `'#000000'`)                                                                                      |
 | `exml.themeFile`    | `string` | Theme JSON file path                                                                                                     |
 | `exml.namespaces`   | `Record<string, string>` | Optional EXML prefix → source barrel-file mapping                                                          |
+
+## HTML Template
+
+New projects include an editable `template/web/index.html`. The build reads
+this file and writes the rendered page to the active output directory. Existing
+projects that do not configure `html.template` continue to use the CLI's
+built-in default page.
+
+The following placeholders are required in a configured project template:
+
+| Placeholder | Generated value |
+| --- | --- |
+| `{{BLAKRON_IMPORT_MAP}}` | Engine and custom namespace import map |
+| `{{BLAKRON_STAGE_WIDTH}}` | Configured stage width |
+| `{{BLAKRON_STAGE_HEIGHT}}` | Configured stage height |
+| `{{BLAKRON_SCALE_MODE}}` | Configured scale mode |
+| `{{BLAKRON_ORIENTATION}}` | Configured orientation |
+| `{{BLAKRON_FRAME_RATE}}` | Configured frame rate |
+| `{{BLAKRON_ENTRY_SCRIPT}}` | Compiled application entry script |
+
+The template may otherwise contain any project-specific HTML, styles, loading
+screen, platform SDK, analytics, fonts, or additional containers. A build fails
+with a clear error when a configured template is missing a required placeholder.
 
 ## EXML Skin Compiler
 
@@ -243,6 +266,9 @@ my-game/
 ├── blakron.config.ts          # Project config (includes exml options)
 ├── package.json               # Dependencies & scripts
 ├── tsconfig.json              # TypeScript config
+├── template/
+│   └── web/
+│       └── index.html            # Editable output page template
 ├── resource/
 │   ├── default.res.json       # Resource config
 │   ├── default.thm.json       # Theme file: component → skin mapping

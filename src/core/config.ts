@@ -26,10 +26,6 @@ export interface StageConfig {
 	 * Target frame rate, in frames per second.
 	 */
 	frameRate: number;
-	/**
-	 * Page background color (CSS color string, e.g. `#000000`).
-	 */
-	background: string;
 }
 
 export interface ExmlConfig {
@@ -60,6 +56,14 @@ export interface OutputConfig {
 	dir: string;
 }
 
+export interface HtmlConfig {
+	/**
+	 * Path to the project-owned HTML template, relative to the project root.
+	 * Omit to use the CLI's built-in default template.
+	 */
+	template: string;
+}
+
 export interface ProjectConfig {
 	/**
 	 * Build target platform. Only `html5` is currently supported.
@@ -74,6 +78,10 @@ export interface ProjectConfig {
 	 * Development build output settings.
 	 */
 	output: OutputConfig;
+	/**
+	 * HTML page template settings. Omit to use the built-in default page.
+	 */
+	html?: HtmlConfig;
 	/**
 	 * Stage / canvas configuration.
 	 */
@@ -94,7 +102,6 @@ const DEFAULTS: ProjectConfig = {
 		scaleMode: 'showAll',
 		orientation: 'auto',
 		frameRate: 60,
-		background: '#000000',
 	},
 };
 
@@ -151,6 +158,14 @@ export async function loadConfig(): Promise<ProjectConfig> {
 	const entryPath = path.resolve(config.entry);
 	if (!(await exists(entryPath))) {
 		throw new ConfigError(`Invalid config: entry file '${config.entry}' does not exist`);
+	}
+
+	// Validate HTML template exists
+	if (config.html) {
+		const templatePath = path.resolve(config.html.template);
+		if (!(await exists(templatePath))) {
+			throw new ConfigError(`Invalid config: HTML template '${config.html.template}' does not exist`);
+		}
 	}
 
 	return config;

@@ -5,6 +5,18 @@ All notable changes to `@blakron/cli` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Project-owned HTML templates through `html.template`, with explicit placeholders for the import map, entry script, and stage settings.
+- Editable `template/web/index.html` files in both the `game` and `empty` project templates.
+
+### Changed
+
+- The default page centers the game canvas horizontally and vertically.
+- Development builds clear the previous output before compiling and place shared application chunks under `js/chunks/`.
+
 ## 1.0.0 — 2026-08-06
 
 ### Added
